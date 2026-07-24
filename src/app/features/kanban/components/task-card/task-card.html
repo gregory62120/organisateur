@@ -1,13 +1,28 @@
-<div class="card">
-  <h3>
-    {{ task.title }}
-  </h3>
+@if (!editing) {
+  <div class="task">
+    <h3>
+      {{ task.title }}
+    </h3>
 
-  <span>
-    {{ task.priority }}
-  </span>
+    <p>
+      {{ task.description }}
+    </p>
 
-  @if (task.attachments.length) {
-    <p>📎 {{ task.attachments.length }}</p>
-  }
-</div>
+    <div class="actions">
+      <button class="btn-edit" (click)="edit()">✏️</button>
+      <button class="btn-delete" title="Supprimer" (click)="delete()">🗑️</button>
+    </div>
+  </div>
+} @else {
+  <div class="task edit">
+    <input [(ngModel)]="editedTask.title" />
+
+    <textarea [(ngModel)]="editedTask.description"> </textarea>
+
+    <div class="actions">
+      <button class="btn-save" title="Sauvegarder" (click)="save()">💾</button>
+
+      <button class="btn-cancel" title="Annuler" (click)="cancel()">❌</button>
+    </div>
+  </div>
+}

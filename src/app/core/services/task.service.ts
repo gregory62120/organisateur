@@ -35,7 +35,7 @@ export class TaskService {
     );
   }
 
-  createEmpty() {
+  createEmpty(): Task {
     return {
       id: crypto.randomUUID(),
 

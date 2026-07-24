@@ -5,7 +5,14 @@
         {{ column.name }}
       </h2>
 
-      <div cdkDropList (cdkDropListDropped)="drop($event, column.status)">
+      <button (click)="addTask(column.status)">+ Ajouter</button>
+
+      <div
+        class="tasks"
+        cdkDropList
+        [cdkDropListData]="tasks(column.status)"
+        (cdkDropListDropped)="drop($event, column.status)"
+      >
         @for (task of tasks(column.status); track task.id) {
           <div cdkDrag [cdkDragData]="task">
             <app-task-card [task]="task" />
