@@ -1,0 +1,34 @@
+.grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, 200px);
+
+    gap: 20px;
+
+}
+
+
+
+.card {
+
+    padding: 10px;
+
+    border-radius: 8px;
+
+    background: #eee;
+
+}
+
+
+
+img {
+
+    width: 100%;
+
+    height: 150px;
+
+    object-fit: cover;
+
+}

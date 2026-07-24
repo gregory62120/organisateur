@@ -1,0 +1,13 @@
+<div class="card">
+  <h3>
+    {{ task.title }}
+  </h3>
+
+  <span>
+    {{ task.priority }}
+  </span>
+
+  @if (task.attachments.length) {
+    <p>📎 {{ task.attachments.length }}</p>
+  }
+</div>

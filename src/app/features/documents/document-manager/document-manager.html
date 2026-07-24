@@ -1,0 +1,19 @@
+<h1>Documents</h1>
+
+<app-file-drop-zone (files)="add($event)"> </app-file-drop-zone>
+
+<div class="grid">
+  @for (doc of documents; track doc.id) {
+    <div>
+      @if (doc.type.startsWith('image')) {
+        <img [src]="doc.path" />
+      }
+
+      @if (doc.type === 'application/pdf') {
+        <iframe [src]="doc.path" width="100%" height="600"> </iframe>
+      } @else {
+        📄 {{ doc.name }}
+      }
+    </div>
+  }
+</div>

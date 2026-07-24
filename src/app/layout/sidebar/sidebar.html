@@ -1,0 +1,9 @@
+<h2>Gestion Projet</h2>
+
+<mat-nav-list>
+  @for (item of menu; track item.url) {
+    <a mat-list-item [routerLink]="item.url">
+      {{ item.label }}
+    </a>
+  }
+</mat-nav-list>

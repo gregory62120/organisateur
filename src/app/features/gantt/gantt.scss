@@ -1,0 +1,54 @@
+.gantt {
+
+    padding: 30px;
+
+}
+
+
+
+.row {
+
+    display: flex;
+
+    height: 50px;
+
+}
+
+
+
+.label {
+
+    width: 180px;
+
+}
+
+
+
+.timeline {
+
+    position: relative;
+
+    flex: 1;
+
+    background: #eee;
+
+}
+
+
+
+.bar {
+
+
+    height: 30px;
+
+    margin-top: 10px;
+
+    background: #4caf50;
+
+    border-radius: 5px;
+
+    color: white;
+
+    text-align: center;
+
+}

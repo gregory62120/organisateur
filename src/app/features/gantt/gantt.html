@@ -1,0 +1,13 @@
+<h1>Planning</h1>
+
+@for (task of tasks; track task.id) {
+  <div class="line">
+    <div class="name">
+      {{ task.title }}
+    </div>
+
+    <div class="timeline">
+      <div class="bar" [style.width.px]="100">{{ task.progress }} %</div>
+    </div>
+  </div>
+}

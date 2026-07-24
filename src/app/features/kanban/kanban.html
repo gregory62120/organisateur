@@ -1,0 +1,17 @@
+<div class="board" cdkDropListGroup>
+  @for (column of columns; track column.status) {
+    <div class="column">
+      <h2>
+        {{ column.name }}
+      </h2>
+
+      <div cdkDropList (cdkDropListDropped)="drop($event, column.status)">
+        @for (task of tasks(column.status); track task.id) {
+          <div cdkDrag [cdkDragData]="task">
+            <app-task-card [task]="task" />
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
