@@ -1,4 +1,14 @@
-@if (!editing) {
+<div class="task">
+  <h3>
+    {{ task.title }}
+  </h3>
+
+  <div class="actions">
+    <button class="btn-delete" title="Supprimer" (click)="delete()">🗑️</button>
+  </div>
+</div>
+
+<!-- @if (!editing) {
   <div class="task">
     <h3>
       {{ task.title }}
@@ -25,4 +35,4 @@
       <button class="btn-cancel" title="Annuler" (click)="cancel()">❌</button>
     </div>
   </div>
-}
+} -->

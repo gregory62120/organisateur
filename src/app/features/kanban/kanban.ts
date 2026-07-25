@@ -6,13 +6,16 @@ import { TaskService } from '../../core/services/task.service';
 import { TaskCardComponent } from './components/task-card/task-card';
 import { Task, TaskStatus } from '../../core/models/task.model';
 import { StorageService } from '../../core/services/storage.service';
+import { TaskDetailComponent } from '../tasks/task-detail/task-detail';
+import { Dialog } from '@angular/cdk/dialog';
+import { TaskDialogComponent } from './components/task-dialog/task-dialog';
 
 @Component({
   selector: 'app-kanban',
 
   standalone: true,
 
-  imports: [CdkDropList, CdkDrag, CdkDropListGroup, TaskCardComponent],
+  imports: [CdkDropList, CdkDrag, CdkDropListGroup, TaskCardComponent, TaskDetailComponent],
 
   templateUrl: './kanban.html',
   styleUrl: './kanban.scss',
@@ -21,6 +24,8 @@ export class KanbanComponent {
   service = inject(TaskService);
 
   storage = inject(StorageService);
+
+  private dialog = inject(Dialog);
 
   columns: { name: string; status: TaskStatus }[] = [
     {
@@ -66,5 +71,19 @@ export class KanbanComponent {
     await this.storage.openProject();
 
     await this.service.load();
+  }
+
+  open(task: Task) {
+    const ref = this.dialog.open(TaskDialogComponent, {
+      data: task,
+      width: '90vw',
+      height: '90vh',
+    });
+
+    ref.closed.subscribe((result) => {
+      if (result) {
+        this.service.update(result as Task);
+      }
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 
 import { Task } from '../../../core/models/task.model';
 
@@ -10,6 +10,7 @@ import { Task } from '../../../core/models/task.model';
   templateUrl: './task-detail.html',
 })
 export class TaskDetailComponent {
-  @Input()
-  task!: Task;
+  @Input() task!: Task;
+
+  @Output() close = new EventEmitter<void>();
 }

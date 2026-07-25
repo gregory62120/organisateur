@@ -11,6 +11,8 @@
 
   margin-bottom: 10px;
 
+  cursor: pointer;
+
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease;
@@ -19,11 +21,13 @@
 .task:hover {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
-input {
-  margin-top: 10px;
+h3 {
+  margin: 0;
+
+  font-size: 16px;
 }
 
 button {
@@ -42,25 +46,6 @@ button {
     transform 0.1s ease;
 }
 
-button:hover {
-  transform: translateY(-1px);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-/* Bouton modifier */
-
-.btn-edit {
-  background: #3b82f6;
-  color: white;
-}
-
-.btn-edit:hover {
-  background: #2563eb;
-}
-
 /* Bouton supression */
 
 .btn-delete {
@@ -71,17 +56,6 @@ button:active {
 
 .btn-delete:hover {
   background: #ea580c;
-}
-
-/* Bouton sauvegarder */
-
-.btn-save {
-  background: #22c55e;
-  color: white;
-}
-
-.btn-save:hover {
-  background: #16a34a;
 }
 
 /* Bouton annuler */

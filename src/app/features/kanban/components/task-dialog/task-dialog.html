@@ -1,0 +1,12 @@
+<h2>{{ task.title }}</h2>
+
+<label>Titre</label>
+<input [(ngModel)]="task.title" />
+
+<label>Description</label>
+<textarea [(ngModel)]="task.description"></textarea>
+
+<div class="actions">
+  <button class="btn-cancel" title="Annuler" (click)="close()">❌</button>
+  <button class="btn-save" title="Sauvegarder" (click)="save()">💾</button>
+</div>
