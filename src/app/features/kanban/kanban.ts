@@ -5,6 +5,7 @@ import { CdkDropList, CdkDrag, CdkDropListGroup, CdkDragDrop } from '@angular/cd
 import { TaskService } from '../../core/services/task.service';
 import { TaskCardComponent } from './components/task-card/task-card';
 import { Task, TaskStatus } from '../../core/models/task.model';
+import { StorageService } from '../../core/services/storage.service';
 
 @Component({
   selector: 'app-kanban',
@@ -18,6 +19,8 @@ import { Task, TaskStatus } from '../../core/models/task.model';
 })
 export class KanbanComponent {
   service = inject(TaskService);
+
+  storage = inject(StorageService);
 
   columns: { name: string; status: TaskStatus }[] = [
     {
@@ -57,5 +60,11 @@ export class KanbanComponent {
     task.status = status;
 
     this.service.add(task);
+  }
+
+  async openProject() {
+    await this.storage.openProject();
+
+    await this.service.load();
   }
 }

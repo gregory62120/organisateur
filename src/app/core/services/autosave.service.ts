@@ -4,10 +4,12 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class AutoSaveService {
-  private timer?: any;
+  private timer?: ReturnType<typeof setTimeout>;
 
-  schedule(callback: Function) {
-    clearTimeout(this.timer);
+  schedule(callback: () => void) {
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
 
     this.timer = setTimeout(() => {
       callback();
