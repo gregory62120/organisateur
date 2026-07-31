@@ -6,7 +6,6 @@ import { TaskService } from '../../core/services/task.service';
 import { TaskCardComponent } from './components/task-card/task-card';
 import { Task, TaskStatus } from '../../core/models/task.model';
 import { StorageService } from '../../core/services/storage.service';
-import { TaskDetailComponent } from '../tasks/task-detail/task-detail';
 import { Dialog } from '@angular/cdk/dialog';
 import { TaskDialogComponent } from './components/task-dialog/task-dialog';
 
@@ -15,7 +14,7 @@ import { TaskDialogComponent } from './components/task-dialog/task-dialog';
 
   standalone: true,
 
-  imports: [CdkDropList, CdkDrag, CdkDropListGroup, TaskCardComponent, TaskDetailComponent],
+  imports: [CdkDropList, CdkDrag, CdkDropListGroup, TaskCardComponent],
 
   templateUrl: './kanban.html',
   styleUrl: './kanban.scss',

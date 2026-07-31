@@ -29,6 +29,13 @@ export const routes: Routes = [
         path: 'gantt',
         loadComponent: () => import('./features/gantt/gantt').then((c) => c.GanttComponent),
       },
+      {
+        path: 'documents',
+        loadComponent: () =>
+          import('./features/documents/document-manager/document-manager').then(
+            (c) => c.DocumentManagerComponent,
+          ),
+      },
     ],
   },
 ];

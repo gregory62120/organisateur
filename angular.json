@@ -30,7 +30,9 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "@fontsource/material-symbols-outlined/index.css",
+              "node_modules/@flogeez/angular-tiptap-editor/src/lib/styles/index.css"
             ]
           },
           "configurations": {

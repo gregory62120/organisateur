@@ -76,3 +76,126 @@ textarea {
 textarea::placeholder {
   color: #9ca3af;
 }
+
+.editor-container {
+  position: relative;
+}
+
+.editor {
+  min-height: 250px;
+
+  outline: none;
+
+  padding: 10px 0;
+
+  font-size: 16px;
+
+  line-height: 1.6;
+}
+
+.editor:empty::before {
+  content: 'Write something or / for command';
+
+  color: #9ca3af;
+}
+
+.slash-menu {
+  position: absolute;
+
+  top: 45px;
+
+  left: 0;
+
+  width: 350px;
+
+  background: white;
+
+  border-radius: 12px;
+
+  padding: 8px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.command {
+  display: flex;
+
+  gap: 15px;
+
+  padding: 12px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.command:hover,
+.command.active {
+  background: #f3f4f6;
+}
+
+.icon {
+  width: 50px;
+
+  height: 50px;
+
+  border: 1px solid #ddd;
+
+  border-radius: 10px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+.command small {
+  display: block;
+
+  color: #777;
+}
+
+.editor-container {
+  position: relative;
+}
+
+.editor {
+  min-height: 350px;
+
+  outline: none;
+
+  font-size: 16px;
+
+  line-height: 1.7;
+}
+
+.slash-menu {
+  position: absolute;
+
+  top: 40px;
+
+  left: 0;
+
+  width: 430px;
+
+  background: white;
+
+  border-radius: 14px;
+
+  padding: 10px;
+
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.menu-item {
+  display: flex;
+
+  gap: 16px;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+}

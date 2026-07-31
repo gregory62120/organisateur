@@ -24,3 +24,40 @@ ng serve
 
 Les projets sont stockés localement
 dans des dossiers transportables.
+
+TipTap configuration
+ffloatingToolbar pour mettre la bar en mode floating
+
+configuration de la toolbar
+
+export const ATE_DEFAULT_TOOLBAR_CONFIG: AteToolbarConfig = {
+bold: true,
+italic: true,
+underline: true,
+strike: true,
+code: true,
+codeBlock: true,
+superscript: true, // Disabled by default (opt-in)
+subscript: true, // Disabled by default (opt-in)
+highlight: true, // Disabled by default (opt-in)
+highlightPicker: true,
+heading1: true,
+heading2: true,
+heading3: true,
+bulletList: true,
+orderedList: true,
+blockquote: true,
+alignLeft: true, // Disabled by default (opt-in)
+alignCenter: true, // Disabled by default (opt-in)
+alignRight: true, // Disabled by default (opt-in)
+alignJustify: true, // Disabled by default (opt-in)
+link: true,
+image: true,
+horizontalRule: true, // Disabled by default (opt-in)
+table: true,
+undo: true,
+redo: true,
+clear: true, // Disabled by default (opt-in)
+textColor: true,
+separator: true,
+};

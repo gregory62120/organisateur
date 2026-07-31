@@ -1,13 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { DocumentService } from '../../../core/services/document.service';
 import { FileDropZoneComponent } from '../file-drop-zone/file-drop-zone';
+import { EditorComponent } from "../../editor/editor";
 
 @Component({
   selector: 'app-document-manager',
 
   standalone: true,
 
-  imports: [FileDropZoneComponent],
+  imports: [FileDropZoneComponent, EditorComponent],
 
   templateUrl: './document-manager.html',
 })

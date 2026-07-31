@@ -1,3 +1,5 @@
+import { EditorBlock } from './block-model';
+
 export interface ChecklistItem {
   id: string;
 

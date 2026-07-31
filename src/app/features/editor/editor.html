@@ -1,0 +1,39 @@
+<div class="app" #appRef data-testid="app-root" [class.dark]="editorState().darkMode">
+  <!-- Main layout -->
+  <div
+    class="container"
+    [class.theme-panel-open]="editorState().activePanel === 'theme'"
+    [class.config-panel-open]="
+      editorState().activePanel === 'config' || editorState().isTransitioning
+    "
+  >
+    <!-- Main editor -->
+    <main class="editor-main">
+      <!-- Main content wrapper with smooth zoom-fade transition -->
+      <div class="main-content-wrapper" [class.flipped]="editorState().showCodeMode">
+        <!-- Front Face: Editor -->
+        <div class="editor-pane">
+          <div
+            class="editor-view"
+            [class.fill-container-active]="editorState().fillContainer"
+            (mouseenter)="onEditorHover(true)"
+            (mouseleave)="onEditorHover(false)"
+          >
+            <angular-tiptap-editor
+              [content]="content"
+              [config]="editorConfig()"
+              (contentChange)="onContentChange($event)"
+              (editableChange)="onEditableChange($event)"
+              (editorFocus)="onFocusEvent($event)"
+              (editorBlur)="onBlur()"
+              (imageUploaded)="onImageUploaded($event)"
+            />
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notifications -->
+  <app-toast-container />
+</div>
