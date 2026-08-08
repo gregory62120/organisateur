@@ -78,7 +78,7 @@ export class TaskService {
     });
   }
 
-  async load() {
+  async loadTask() {
     try {
       const content = await this.storage.read('tasks.json');
 

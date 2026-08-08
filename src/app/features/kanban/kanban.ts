@@ -8,6 +8,8 @@ import { Task, TaskStatus } from '../../core/models/task.model';
 import { StorageService } from '../../core/services/storage.service';
 import { Dialog } from '@angular/cdk/dialog';
 import { TaskDialogComponent } from './components/task-dialog/task-dialog';
+import { DocumentManagerComponent } from '../documents/document-manager/document-manager';
+import { DocumentService } from '../../core/services/document.service';
 
 @Component({
   selector: 'app-kanban',
@@ -20,11 +22,13 @@ import { TaskDialogComponent } from './components/task-dialog/task-dialog';
   styleUrl: './kanban.scss',
 })
 export class KanbanComponent {
-  service = inject(TaskService);
+  taskService = inject(TaskService);
 
   storage = inject(StorageService);
 
   private dialog = inject(Dialog);
+
+  private documentService = inject(DocumentService);
 
   columns: { name: string; status: TaskStatus }[] = [
     {
@@ -49,27 +53,28 @@ export class KanbanComponent {
   ];
 
   tasks(status: string) {
-    return this.service.tasksSignal().filter((t) => t.status === status);
+    return this.taskService.tasksSignal().filter((t) => t.status === status);
   }
 
   drop(event: CdkDragDrop<any[]>, status: TaskStatus) {
     const task = event.item.data;
 
-    this.service.move(task.id, status);
+    this.taskService.move(task.id, status);
   }
 
   addTask(status: TaskStatus) {
-    const task = this.service.createEmpty();
+    const task = this.taskService.createEmpty();
 
     task.status = status;
 
-    this.service.add(task);
+    this.taskService.add(task);
   }
 
   async openProject() {
     await this.storage.openProject();
 
-    await this.service.load();
+    await this.taskService.loadTask();
+    await this.documentService.refreshRootPage();
   }
 
   open(task: Task) {
@@ -81,7 +86,7 @@ export class KanbanComponent {
 
     ref.closed.subscribe((result) => {
       if (result) {
-        this.service.update(result as Task);
+        this.taskService.update(result as Task);
       }
     });
   }

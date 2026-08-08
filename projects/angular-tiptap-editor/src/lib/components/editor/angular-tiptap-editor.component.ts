@@ -106,6 +106,7 @@ import {
   AteImageUploadOptions,
   AteImageUploadResult,
 } from '../../models/ate-image.model';
+import { Router } from '@angular/router';
 
 // Slash commands configuration is handled dynamically via slashCommandsConfigComputed
 
@@ -1120,6 +1121,7 @@ export class AngularTiptapEditorComponent implements AfterViewInit, OnDestroy {
   private _isDragOver = signal<boolean>(false);
   private _editorFullyInitialized = signal<boolean>(false);
   private _hoveredBlock = signal<{ node: PMNode; element: HTMLElement; pos: number } | null>(null);
+  private readonly router = inject(Router);
 
   // Anti-echo: track last emitted HTML to prevent cursor reset on parent echo
   private lastEmittedHtml: string | null = null;
@@ -1587,7 +1589,7 @@ export class AngularTiptapEditorComponent implements AfterViewInit, OnDestroy {
       TextAlign.configure({
         types: ['heading', 'paragraph', 'resizableImage'],
       }),
-      AteLinkClickBehavior,
+      AteLinkClickBehavior(this.router),
       Highlight.configure({
         multicolor: true,
         HTMLAttributes: {

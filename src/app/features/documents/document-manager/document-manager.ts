@@ -1,25 +1,47 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { DocumentService } from '../../../core/services/document.service';
-import { FileDropZoneComponent } from '../file-drop-zone/file-drop-zone';
-import { EditorComponent } from "../../editor/editor";
+import { EditorComponent } from '../../editor/editor';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-document-manager',
-
   standalone: true,
-
-  imports: [FileDropZoneComponent, EditorComponent],
-
+  imports: [EditorComponent, FormsModule],
   templateUrl: './document-manager.html',
 })
 export class DocumentManagerComponent {
-  service = inject(DocumentService);
+  private readonly service = inject(DocumentService);
 
-  documents = this.service.getAll();
+  constructor() {
+    this.init();
+  }
 
-  async add(files: File[]) {
-    for (const file of files) {
-      await this.service.import(file);
+  private async init(): Promise<void> {
+    console.log('test');
+
+    const page = await this.service.refreshRootPage();
+
+    if (page) {
+      this.content = page.content;
     }
+  }
+
+  /**
+   * La page principale possède maintenant
+   * son propre identifiant.
+   */
+  readonly rootPage = this.service.getOrCreateRoot();
+
+  content?: string;
+
+  onContentChange(content: unknown): void {
+    if (typeof content !== 'string') {
+      return;
+    }
+
+    console.log(content);
+    this.content = content;
+
+    this.service.updateContent(content);
   }
 }

@@ -6,15 +6,15 @@ import {
   signal,
   effect,
   inject,
-} from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { AteButtonComponent } from "../../ui/ate-button.component";
-import { AteLinkService } from "../../../services/ate-link.service";
-import { AteSeparatorComponent } from "../../ui/ate-separator.component";
-import { AteBaseSubBubbleMenu } from "../base/ate-base-sub-bubble-menu";
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { AteButtonComponent } from '../../ui/ate-button.component';
+import { AteLinkService } from '../../../services/ate-link.service';
+import { AteSeparatorComponent } from '../../ui/ate-separator.component';
+import { AteBaseSubBubbleMenu } from '../base/ate-base-sub-bubble-menu';
 
 @Component({
-  selector: "ate-link-bubble-menu",
+  selector: 'ate-link-bubble-menu',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AteButtonComponent, AteSeparatorComponent, FormsModule],
@@ -27,7 +27,8 @@ import { AteBaseSubBubbleMenu } from "../base/ate-base-sub-bubble-menu";
       (keydown)="$event.stopPropagation()"
       (keydown.escape)="onCancel($event)"
       tabindex="-1"
-      role="dialog">
+      role="dialog"
+    >
       <div class="link-input-row">
         <div class="url-input-container">
           <span class="material-symbols-outlined icon-link">link</span>
@@ -41,7 +42,8 @@ import { AteBaseSubBubbleMenu } from "../base/ate-base-sub-bubble-menu";
             (focus)="onFocus()"
             (blur)="onBlur()"
             (keydown.enter)="onApply($event)"
-            (keydown.escape)="onCancel($event)" />
+            (keydown.escape)="onCancel($event)"
+          />
         </div>
 
         <div class="action-buttons">
@@ -50,19 +52,22 @@ import { AteBaseSubBubbleMenu } from "../base/ate-base-sub-bubble-menu";
             [title]="common().apply"
             color="var(--ate-primary)"
             [disabled]="!editUrl().trim()"
-            (buttonClick)="onApply($event)"></ate-button>
+            (buttonClick)="onApply($event)"
+          ></ate-button>
           <ate-button
             icon="open_in_new"
             [title]="t().openLink"
             [disabled]="!currentUrl()"
-            (buttonClick)="onOpenLink($event)"></ate-button>
+            (buttonClick)="onOpenLink($event)"
+          ></ate-button>
           <ate-separator />
           <ate-button
             icon="link_off"
             [title]="t().removeLink"
             variant="danger"
             [disabled]="!currentUrl()"
-            (buttonClick)="onRemove($event)"></ate-button>
+            (buttonClick)="onRemove($event)"
+          ></ate-button>
         </div>
       </div>
     </div>
@@ -123,9 +128,9 @@ export class AteLinkBubbleMenuComponent extends AteBaseSubBubbleMenu {
   readonly t = this.i18nService.bubbleMenu;
   readonly common = this.i18nService.common;
 
-  linkInput = viewChild<ElementRef<HTMLInputElement>>("linkInput");
+  linkInput = viewChild<ElementRef<HTMLInputElement>>('linkInput');
 
-  editUrl = signal("");
+  editUrl = signal('');
 
   constructor() {
     super();
@@ -135,7 +140,7 @@ export class AteLinkBubbleMenuComponent extends AteBaseSubBubbleMenu {
       () => {
         const state = this.state();
         const isInteracting = this.linkSvc.isInteracting();
-        const currentLinkHref = state.marks.linkHref || "";
+        const currentLinkHref = state.marks.linkHref || '';
 
         // SYNC LOGIC:
         // If we are NOT currently typing (interacting),
@@ -144,7 +149,7 @@ export class AteLinkBubbleMenuComponent extends AteBaseSubBubbleMenu {
           this.editUrl.set(currentLinkHref);
         }
       },
-      { allowSignalWrites: true }
+      { allowSignalWrites: true },
     );
   }
 
@@ -191,7 +196,7 @@ export class AteLinkBubbleMenuComponent extends AteBaseSubBubbleMenu {
     try {
       const { node } = ed.view.domAtPos(from);
       const element = node instanceof Element ? node : node.parentElement;
-      const linkElement = (element as Element)?.closest("a");
+      const linkElement = (element as Element)?.closest('a');
       if (linkElement) {
         return linkElement.getBoundingClientRect();
       }
@@ -221,13 +226,13 @@ export class AteLinkBubbleMenuComponent extends AteBaseSubBubbleMenu {
   }
 
   currentUrl() {
-    return this.state().marks.linkHref || "";
+    return this.state().marks.linkHref || '';
   }
 
   onMouseDown(event: MouseEvent) {
     event.stopPropagation();
     const target = event.target as HTMLElement;
-    if (target.tagName !== "INPUT") {
+    if (target.tagName !== 'INPUT') {
       event.preventDefault();
     }
   }
@@ -248,7 +253,7 @@ export class AteLinkBubbleMenuComponent extends AteBaseSubBubbleMenu {
     event.stopPropagation();
     const url = this.currentUrl();
     if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   }
 
@@ -264,7 +269,7 @@ export class AteLinkBubbleMenuComponent extends AteBaseSubBubbleMenu {
     const url = this.editUrl().trim();
     if (url) {
       this.linkSvc.setLink(this.editor(), url);
-      this.editUrl.set("");
+      this.editUrl.set('');
       this.linkSvc.setInteracting(false);
       this.hideTippy();
     } else {

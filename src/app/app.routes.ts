@@ -36,6 +36,13 @@ export const routes: Routes = [
             (c) => c.DocumentManagerComponent,
           ),
       },
+      {
+        path: 'document/:id',
+        loadComponent: () =>
+          import('./features/documents/document-manager/document-manager').then(
+            (c) => c.DocumentManagerComponent,
+          ),
+      },
     ],
   },
 ];

@@ -14,6 +14,7 @@ import {
 } from '../../../../../../projects/angular-tiptap-editor/src/public-api';
 import { EditorState, MenuState } from '../types/editor-config.types';
 import { AppI18nService } from './app-i18n.service';
+import { DocumentService } from '../../../../core/services/document.service';
 
 @Injectable({
   providedIn: 'root',
@@ -22,6 +23,7 @@ export class EditorConfigurationService {
   private ateI18nService = inject(AteI18nService);
   private appI18nService = inject(AppI18nService);
   private registry = inject(AteEditorRegistry);
+  private readonly documentService = inject(DocumentService);
   // Editor state
   private _editorState = signal<EditorState>({
     showSidebar: false,
@@ -48,7 +50,7 @@ export class EditorConfigurationService {
     darkMode: false,
     activePanel: 'none',
     showInspector: false,
-    enableTaskExtension: false,
+    enableTaskExtension: true,
     maxCharacters: undefined,
     editable: true,
     seamless: false,
@@ -183,6 +185,30 @@ export class EditorConfigurationService {
         },
       });
     }
+
+    customs.push({
+      title: 'Nouvelle page',
+
+      description: 'Créer une sous-page liée',
+
+      icon: 'article',
+
+      keywords: ['page', 'document', 'sous-page', 'nouvelle page'],
+
+      command: (editor: Editor) => {
+        const page = this.documentService.createChildOfCurrentPage();
+
+        editor
+          .chain()
+          .focus()
+          .setLink({
+            href: `/document/${page.id}`,
+            target: null,
+          })
+          .insertContent('📄 Nouvelle page')
+          .run();
+      },
+    });
 
     return {
       ...natives,

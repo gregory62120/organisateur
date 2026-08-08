@@ -1,36 +1,44 @@
-import { Extension, getAttributes } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Router } from '@angular/router';
+import { Extension, getAttributes } from '@tiptap/core';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 
-export const AteLinkClickBehavior = Extension.create({
-  name: "linkClickBehavior",
+export function AteLinkClickBehavior(router: Router) {
+  return Extension.create({
+    name: 'linkClickBehavior',
 
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        key: new PluginKey("linkClickBehavior"),
-        props: {
-          handleClick(view, _pos, event) {
-            // handleClick only runs in the browser, but we guard it for absolute SSR safety
-            if (typeof window === "undefined") {
-              return false;
-            }
+    addProseMirrorPlugins() {
+      return [
+        new Plugin({
+          key: new PluginKey('linkClickBehavior'),
 
-            const isModKey = event.ctrlKey || event.metaKey;
+          props: {
+            handleClick(view, _pos, event) {
+              if (typeof window === 'undefined') {
+                return false;
+              }
 
-            // If editor is editable, only proceed if Ctrl/Cmd is pressed
-            if (view.editable && !isModKey) {
-              return false;
-            }
+              const target = event.target;
 
-            const attrs = getAttributes(view.state, "link");
-            if (attrs["href"]) {
-              window.open(attrs["href"], "_blank", "noopener,noreferrer");
+              if (!(target instanceof HTMLAnchorElement)) {
+                return false;
+              }
+
+              const href = target.getAttribute('href');
+
+              if (!href) {
+                return false;
+              }
+
+              event.preventDefault();
+              event.stopPropagation();
+
+              router.navigateByUrl(href);
+
               return true;
-            }
-            return false;
+            },
           },
-        },
-      }),
-    ];
-  },
-});
+        }),
+      ];
+    },
+  });
+}

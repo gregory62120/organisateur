@@ -1,6 +1,6 @@
 <h1>Espace de travail</h1>
 
-<app-editor> </app-editor>
+<app-editor [ngModel]="content" (ngModelChange)="onContentChange($event)"></app-editor>
 
 <!-- <app-file-drop-zone (files)="add($event)"> </app-file-drop-zone>
 

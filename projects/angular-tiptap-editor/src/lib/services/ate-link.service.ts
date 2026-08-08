@@ -1,5 +1,5 @@
-import { Injectable, signal } from "@angular/core";
-import type { Editor } from "@tiptap/core";
+import { Injectable, signal } from '@angular/core';
+import type { Editor } from '@tiptap/core';
 
 @Injectable()
 export class AteLinkService {
@@ -61,18 +61,18 @@ export class AteLinkService {
     }
 
     // If a string URL is provided, set the link and close
-    if (urlOrEvent && typeof urlOrEvent === "string") {
+    if (urlOrEvent && typeof urlOrEvent === 'string') {
       this.setLink(editor, urlOrEvent);
       return;
     }
 
     // If an Event is provided, extract the trigger element
     let trigger: HTMLElement | undefined;
-    if (urlOrEvent && typeof urlOrEvent !== "string") {
+    if (urlOrEvent && typeof urlOrEvent !== 'string') {
       const target = (urlOrEvent as Event).target as HTMLElement;
       trigger =
         ((urlOrEvent as Event).currentTarget as HTMLElement) ||
-        (target as Element)?.closest("button") ||
+        (target as Element)?.closest('button') ||
         target;
     }
 
@@ -91,7 +91,7 @@ export class AteLinkService {
     if (!editor) {
       return;
     }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
     this.close();
   }
 
@@ -102,7 +102,7 @@ export class AteLinkService {
     if (!editor) {
       return;
     }
-    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
     this.close();
   }
 }
