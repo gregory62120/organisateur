@@ -1,4 +1,13 @@
-import { Component, computed, effect, forwardRef, inject } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  forwardRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import {
   AngularTiptapEditorComponent,
   AteEditorConfig,
@@ -26,33 +35,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   templateUrl: './editor.html',
   styleUrl: './editor.scss',
 })
-export class EditorComponent implements ControlValueAccessor {
-  private onChange = (value: string) => {};
-  private onTouched = () => {};
-
-  content = '';
-
-  writeValue(value: string): void {
-    this.content = value ?? '';
-  }
-
-  registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
-
-  registerOnTouched(fn: any): void {
-    this.onTouched = fn;
-  }
-
-  onContentChange(value: string) {
-    console.log(value);
-    this.content = value;
-    this.onChange(value);
-  }
-
-  onBlur() {
-    this.onTouched();
-  }
+export class EditorComponent {
+  readonly content = input('');
+  readonly contentChange = output<string>();
 
   // Injection des services
   private configService = inject(EditorConfigurationService);
@@ -124,6 +109,10 @@ export class EditorComponent implements ControlValueAccessor {
         document.body.classList.remove('dark');
       }
     });
+  }
+
+  onContentChange(value: string) {
+    this.contentChange.emit(value);
   }
 
   onEditableChange(editable: boolean) {

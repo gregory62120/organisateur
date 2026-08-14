@@ -35,10 +35,4 @@ export class ProjectService {
 
     return project;
   }
-
-  async load() {
-    const json = await this.storage.read('project.json');
-
-    return JSON.parse(json);
-  }
 }

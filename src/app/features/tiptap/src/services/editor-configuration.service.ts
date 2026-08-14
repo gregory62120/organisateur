@@ -26,7 +26,7 @@ export class EditorConfigurationService {
   private readonly documentService = inject(DocumentService);
   // Editor state
   private _editorState = signal<EditorState>({
-    showSidebar: false,
+    showSidebar: true,
     showCodeMode: false,
     isTransitioning: false,
     showToolbar: true,
@@ -38,7 +38,7 @@ export class EditorConfigurationService {
     showTableBubbleMenu: true,
     showCellBubbleMenu: true,
     enableSlashCommands: true,
-    placeholder: 'Start typing...', // Will be updated by the effect
+    placeholder: 'Start typing...',
     locale: undefined,
     // Height configuration
     minHeight: undefined,

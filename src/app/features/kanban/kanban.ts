@@ -74,7 +74,6 @@ export class KanbanComponent {
     await this.storage.openProject();
 
     await this.taskService.loadTask();
-    await this.documentService.refreshRootPage();
   }
 
   open(task: Task) {

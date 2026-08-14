@@ -20,12 +20,11 @@
             (mouseleave)="onEditorHover(false)"
           >
             <angular-tiptap-editor
-              [content]="content"
+              [content]="content()"
               [config]="editorConfig()"
               (contentChange)="onContentChange($event)"
               (editableChange)="onEditableChange($event)"
               (editorFocus)="onFocusEvent($event)"
-              (editorBlur)="onBlur()"
               (imageUploaded)="onImageUploaded($event)"
             />
           </div>

@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, Signal, signal } from '@angular/core';
 import { DocumentPage } from '../../features/tiptap/src/models/document-page.model';
 import { StorageService } from './storage.service';
 import { Router } from '@angular/router';
@@ -10,9 +10,11 @@ export class DocumentService {
   private readonly documentsState = signal<DocumentPage[]>([]);
 
   /**
-   * Toutes les pages.
+   * La page à afficher.
    */
-  readonly documents = this.documentsState.asReadonly();
+  readonly documents = computed(() =>
+    this.documentsState().filter((page) => page.id == this.currentPageId()),
+  );
 
   /**
    * Identifiant de la page actuellement affichée.
@@ -21,91 +23,74 @@ export class DocumentService {
 
   readonly currentPageId = this.currentPageIdState.asReadonly();
 
-  private readonly rootPageState = signal<DocumentPage | null>(null);
-
   private storage = inject(StorageService);
-
-  readonly rootPage = this.rootPageState.asReadonly();
 
   private readonly router = inject(Router);
 
   constructor(storageService: StorageService) {
-    effect(() => storageService.write('document.json', JSON.stringify(this.documentsState())));
-  }
-
-  /**
-   * Retourne toutes les pages.
-   */
-  getAll(): DocumentPage[] {
-    return this.documentsState();
+    console.log('init service');
+    effect(() => {
+      const documentState = this.documentsState();
+      console.log('écriture', documentState);
+      if (documentState.length) {
+        storageService.write('document.json', JSON.stringify(documentState));
+      }
+    });
+    effect(() => console.log(this.currentPageId()));
+    effect(() => console.log(this.documents()));
   }
 
   /**
    * Retourne une page avec son identifiant.
    */
-  getById(id: string): DocumentPage | undefined {
+  getPagebyId(id: string): DocumentPage | undefined {
     return this.documentsState().find((page) => page.id === id);
   }
 
-  /**
-   * Retourne la page racine.
-   */
-  getRoot(): DocumentPage | undefined {
-    console.log('getRoot');
-    return this.documentsState().find((page) => page.parentId === null);
-  }
-
-  async refreshRootPage(): Promise<DocumentPage> {
-    await this.loadDocuments();
-
+  async refreshRootPage(): Promise<void> {
     const id = this.getCurrentDocumentIdFromUrl();
 
-    console.log('id url', id);
-
-    const page = id ? this.getById(id) : this.getOrCreateRoot();
+    const page = id ? this.getPagebyId(id) : this.getOrCreateRootPage();
 
     console.log('refresh', page);
 
     if (page) {
-      this.rootPageState.set(page);
       if (id) {
-        this.setCurrentPage(id);
+        this.setCurrentPageId(id);
       }
-      return page;
     } else {
       const now = new Date().toISOString();
 
-      return {
-        id: crypto.randomUUID(),
-        parentId: null,
-        title: 'Espace de travail',
-        content: '<p></p>',
-        createdAt: now,
-        updatedAt: now,
-      };
+      // return {
+      //   id: crypto.randomUUID(),
+      //   parentId: null,
+      //   title: 'Espace de travail',
+      //   content: '<p></p>',
+      //   createdAt: now,
+      //   updatedAt: now,
+      // };
     }
   }
 
-  async loadDocuments() {
+  async loadDocumentFromStorage() {
     try {
       const content = await this.storage.read('document.json');
-
-      this.documentsState.update(() => JSON.parse(content));
+      console.log('loadDocumentFromStorage');
+      if (content) {
+        this.documentsState.update(() => JSON.parse(content));
+      }
     } catch {
+      console.log('loadDocumentFromStorage 1');
       this.documentsState.set([]);
     }
   }
 
-  /**
-   * Crée la page racine si elle n'existe pas.
-   */
-  getOrCreateRoot(): DocumentPage {
-    const existingRoot = this.getRoot();
+  getOrCreateRootPage(): DocumentPage {
+    const rootPage = this.documentsState().find((page) => page.parentId === null);
 
-    if (existingRoot) {
-      this.setCurrentPage(existingRoot.id);
-      this.rootPageState.set(existingRoot);
-      return existingRoot;
+    if (rootPage) {
+      this.setCurrentPageId(rootPage.id);
+      return rootPage;
     }
 
     const now = new Date().toISOString();
@@ -113,16 +98,19 @@ export class DocumentService {
     const root: DocumentPage = {
       id: crypto.randomUUID(),
       parentId: null,
-      title: 'Espace de travail',
+      title: 'Espace de travail de test',
       content: '<p></p>',
       createdAt: now,
       updatedAt: now,
     };
 
-    this.documentsState.update((documents) => [...documents, root]);
+    console.log('getOrCreateRootPage');
+    this.documentsState.update((documents) => {
+      console.log('update');
+      return [...documents, root];
+    });
 
-    this.setCurrentPage(root.id);
-    this.rootPageState.set(root);
+    this.setCurrentPageId(root.id);
 
     return root;
   }
@@ -130,7 +118,7 @@ export class DocumentService {
   /**
    * Définit la page actuellement ouverte.
    */
-  setCurrentPage(id: string): void {
+  setCurrentPageId(id: string): void {
     this.currentPageIdState.set(id);
   }
 
@@ -162,16 +150,10 @@ export class DocumentService {
   }
 
   /**
-   * Retourne les enfants directs d'une page.
-   */
-  getChildren(parentId: string): DocumentPage[] {
-    return this.documentsState().filter((page) => page.parentId === parentId);
-  }
-
-  /**
    * Met à jour le contenu d'une page.
    */
   updateContent(content: string): void {
+    console.log('updateContent');
     this.documentsState.update((documents) =>
       documents.map((page) =>
         page.id === this.currentPageId()
@@ -183,33 +165,6 @@ export class DocumentService {
           : page,
       ),
     );
-  }
-
-  /**
-   * Modifie le titre d'une page.
-   */
-  updateTitle(id: string, title: string): void {
-    this.documentsState.update((documents) =>
-      documents.map((page) =>
-        page.id === id
-          ? {
-              ...page,
-              title,
-              updatedAt: new Date().toISOString(),
-            }
-          : page,
-      ),
-    );
-  }
-
-  openPage(id: string): DocumentPage | undefined {
-    const page = this.getById(id);
-
-    if (page) {
-      this.setCurrentPage(id);
-    }
-
-    return page;
   }
 
   private getCurrentDocumentIdFromUrl(): string | null {

@@ -1,61 +1,53 @@
-import { Injectable } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 
 @Injectable({
   providedIn: 'root',
 })
 export class StorageService {
-  private root?: FileSystemDirectoryHandle;
+  private readonly rootState = signal<FileSystemDirectoryHandle | undefined>(undefined);
+  readonly root = this.rootState.asReadonly();
 
-  async openProject() {
-    this.root = await window.showDirectoryPicker({
+  readonly isOpen = computed(() => this.rootState() !== undefined);
+
+  async openProject(): Promise<void> {
+    const directory = await window.showDirectoryPicker({
       mode: 'readwrite',
     });
+
+    this.rootState.set(directory);
   }
 
-  private checkRoot(): FileSystemDirectoryHandle {
-    if (!this.root) {
-      throw new Error('Projet fermé');
+  getRoot(): FileSystemDirectoryHandle | undefined {
+    const root = this.rootState();
+    return root;
+  }
+
+  async write(path: string, content: string): Promise<void> {
+    const root = this.getRoot();
+    if (!root) {
+      console.log('erreur projet fermée');
+      return;
     }
-
-    return this.root;
-  }
-
-  private async getFolder(path: string) {
-    return this.checkRoot().getDirectoryHandle(path, {
-      create: true,
-    });
-  }
-
-  async saveFile(folder: string, file: File) {
-    const dir = await this.getFolder(folder);
-
-    const handle = await dir.getFileHandle(file.name, {
+    const handle = await root.getFileHandle(path, {
       create: true,
     });
 
     const writer = await handle.createWritable();
 
-    await writer.write(file);
-
-    await writer.close();
-
-    return `${folder}/${file.name}`;
+    try {
+      await writer.write(content);
+    } finally {
+      await writer.close();
+    }
   }
 
-  async write(path: string, content: string) {
-    const handle = await this.checkRoot().getFileHandle(path, {
-      create: true,
-    });
-
-    const writer = await handle.createWritable();
-
-    await writer.write(content);
-
-    await writer.close();
-  }
-
-  async read(path: string): Promise<string> {
-    const handle = await this.checkRoot().getFileHandle(path);
+  async read(path: string): Promise<string | undefined> {
+    const root = this.getRoot();
+    if (!root) {
+      console.log('erreur projet fermée');
+      return;
+    }
+    const handle = await root.getFileHandle(path);
 
     const file = await handle.getFile();
 

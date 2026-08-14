@@ -82,7 +82,9 @@ export class TaskService {
     try {
       const content = await this.storage.read('tasks.json');
 
-      this.tasks.set(JSON.parse(content));
+      if (content) {
+        this.tasks.set(JSON.parse(content));
+      }
     } catch {
       this.tasks.set([]);
     }
