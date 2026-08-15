@@ -187,6 +187,16 @@ export class EditorConfigurationService {
     }
 
     customs.push({
+      title: 'Dessin',
+      description: 'Insérer une zone de dessin',
+      icon: 'draw',
+      keywords: ['dessin', 'drawing', 'canvas', 'croquis', 'schema'],
+      command: (editor: Editor) => {
+        editor.chain().focus().insertDrawing().run();
+      },
+    });
+
+    customs.push({
       title: 'Nouvelle page',
 
       description: 'Créer une sous-page liée',
@@ -209,6 +219,30 @@ export class EditorConfigurationService {
           .run();
       },
     });
+
+    // customs.push({
+    //   title: 'Nouvelle page',
+
+    //   description: 'Créer une sous-page liée',
+
+    //   icon: 'article',
+
+    //   keywords: ['page', 'document', 'sous-page', 'nouvelle page'],
+
+    //   command: (editor: Editor) => {
+    //     const page = this.documentService.createChildOfCurrentPage();
+
+    //     editor
+    //       .chain()
+    //       .focus()
+    //       .setLink({
+    //         href: `/document/${page.id}`,
+    //         target: null,
+    //       })
+    //       .insertContent('📄 Nouvelle page')
+    //       .run();
+    //   },
+    // });
 
     return {
       ...natives,
