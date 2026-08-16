@@ -28,6 +28,14 @@ export class DocumentManagerComponent implements OnInit {
 
   constructor() {
     effect(() => console.log(this.content()));
+
+    // Se réactualiser quand un projet est ouvert
+    effect(() => {
+      const count = this.storage.projectOpened();
+      if (count > 0) {
+        this.reloadDocuments();
+      }
+    });
   }
 
   content = computed(() => {
@@ -54,9 +62,13 @@ export class DocumentManagerComponent implements OnInit {
       this.modal.openPopup();
       return;
     }
+    await this.reloadDocuments();
+    this.isInitialize = false;
+  }
+
+  private async reloadDocuments(): Promise<void> {
     await this.service.loadDocumentFromStorage();
     await this.service.refreshRootPage();
-    this.isInitialize = false;
   }
 
   onContentChange(content: unknown): void {

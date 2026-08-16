@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 
 import { CdkDropList, CdkDrag, CdkDropListGroup, CdkDragDrop } from '@angular/cdk/drag-drop';
 
@@ -29,6 +29,16 @@ export class KanbanComponent {
   private dialog = inject(Dialog);
 
   private documentService = inject(DocumentService);
+
+  constructor() {
+    // Se réactualiser quand un projet est ouvert
+    effect(() => {
+      const count = this.storage.projectOpened();
+      if (count > 0) {
+        this.taskService.loadTask();
+      }
+    });
+  }
 
   columns: { name: string; status: TaskStatus }[] = [
     {

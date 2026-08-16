@@ -9,6 +9,13 @@ export class StorageService {
   private readonly rootState = signal<FileSystemDirectoryHandle | undefined>(undefined);
   readonly root = this.rootState.asReadonly();
 
+  /**
+   * Compteur incrémenté à chaque ouverture de projet.
+   * Permet aux composants d'écouter les changements et de se réactualiser.
+   */
+  private readonly projectOpenedCount = signal<number>(0);
+  readonly projectOpened = this.projectOpenedCount.asReadonly();
+
   readonly isOpen = computed(() => this.rootState() !== undefined);
 
   async openProject(): Promise<void> {
@@ -17,6 +24,7 @@ export class StorageService {
     });
 
     this.rootState.set(directory);
+    this.projectOpenedCount.update((count) => count + 1);
   }
 
   getRoot(): FileSystemDirectoryHandle | undefined {
