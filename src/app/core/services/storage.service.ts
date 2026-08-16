@@ -1,9 +1,11 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { PopupService } from './popup/popup';
 
 @Injectable({
   providedIn: 'root',
 })
 export class StorageService {
+  private modal = inject(PopupService);
   private readonly rootState = signal<FileSystemDirectoryHandle | undefined>(undefined);
   readonly root = this.rootState.asReadonly();
 
@@ -18,6 +20,7 @@ export class StorageService {
   }
 
   getRoot(): FileSystemDirectoryHandle | undefined {
+    console.log('getRoot');
     const root = this.rootState();
     return root;
   }
@@ -42,9 +45,11 @@ export class StorageService {
   }
 
   async read(path: string): Promise<string | undefined> {
+    console.log('read');
     const root = this.getRoot();
     if (!root) {
       console.log('erreur projet fermée');
+      this.modal.openPopup();
       return;
     }
     const handle = await root.getFileHandle(path);

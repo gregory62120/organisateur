@@ -12,6 +12,7 @@ import { DocumentService } from '../../../core/services/document.service';
 import { EditorComponent } from '../../editor/editor';
 import { FormsModule } from '@angular/forms';
 import { StorageService } from '../../../core/services/storage.service';
+import { PopupService } from '../../../core/services/popup/popup';
 
 @Component({
   selector: 'app-document-manager',
@@ -22,6 +23,7 @@ import { StorageService } from '../../../core/services/storage.service';
 export class DocumentManagerComponent implements OnInit {
   private readonly service = inject(DocumentService);
   private readonly storage = inject(StorageService);
+  private modal = inject(PopupService);
   private isInitialize: boolean = true;
 
   constructor() {
@@ -49,6 +51,7 @@ export class DocumentManagerComponent implements OnInit {
   private async init(): Promise<void> {
     console.log('init');
     if (!this.storage.getRoot()) {
+      this.modal.openPopup();
       return;
     }
     await this.service.loadDocumentFromStorage();
