@@ -1,15 +1,14 @@
 import { Component, effect, inject } from '@angular/core';
 
-import { CdkDropList, CdkDrag, CdkDropListGroup, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 
+import { Dialog } from '@angular/cdk/dialog';
+import { Task, TaskStatus } from '../../core/models/task.model';
+import { DocumentService } from '../../core/services/document.service';
+import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
 import { TaskCardComponent } from './components/task-card/task-card';
-import { Task, TaskStatus } from '../../core/models/task.model';
-import { StorageService } from '../../core/services/storage.service';
-import { Dialog } from '@angular/cdk/dialog';
 import { TaskDialogComponent } from './components/task-dialog/task-dialog';
-import { DocumentManagerComponent } from '../documents/document-manager/document-manager';
-import { DocumentService } from '../../core/services/document.service';
 
 @Component({
   selector: 'app-kanban',
@@ -91,12 +90,6 @@ export class KanbanComponent {
       data: task,
       width: '90vw',
       height: '90vh',
-    });
-
-    ref.closed.subscribe((result) => {
-      if (result) {
-        this.taskService.update(result as Task);
-      }
     });
   }
 }

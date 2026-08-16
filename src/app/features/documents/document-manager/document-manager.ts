@@ -40,10 +40,7 @@ export class DocumentManagerComponent implements OnInit {
 
   content = computed(() => {
     const pages = this.service.documents();
-    console.log(pages);
     if (pages.length < 1) {
-      const now = new Date().toISOString();
-
       return '<p></p>';
     } else if (pages.length == 1) {
       return pages[0].content;

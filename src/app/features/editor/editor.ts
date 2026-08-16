@@ -1,26 +1,17 @@
-import {
-  Component,
-  computed,
-  effect,
-  forwardRef,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, computed, effect, forwardRef, inject, input, output } from '@angular/core';
+import { NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Editor, Extensions } from '@tiptap/core';
 import {
   AngularTiptapEditorComponent,
   AteEditorConfig,
   AteI18nService,
   AteImageUploadResult,
 } from '../../../../projects/angular-tiptap-editor/src/public-api';
-import { Editor, Extension, Extensions, Mark } from '@tiptap/core';
-import { TaskItem, TaskList } from '../tiptap/src/extensions/task.extension';
+import { ToastContainerComponent } from '../tiptap/src/components/toast-container.component';
 import { Drawing } from '../tiptap/src/extensions/drawing.extension';
+import { TaskItem, TaskList } from '../tiptap/src/extensions/task.extension';
 import { EditorConfigurationService } from '../tiptap/src/services/editor-configuration.service';
 import { ToastService } from '../tiptap/src/services/toast.service';
-import { ToastContainerComponent } from '../tiptap/src/components/toast-container.component';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
   selector: 'app-editor',

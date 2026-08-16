@@ -1,7 +1,6 @@
 import { Component, Input, inject } from '@angular/core';
 import { Task } from '../../../../core/models/task.model';
 import { TaskService } from '../../../../core/services/task.service';
-import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-task-card',

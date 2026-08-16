@@ -2,7 +2,7 @@
   {{ task.title }}
 </h2>
 
-<app-editor [formControl]="descriptionControl"> </app-editor>
+<app-editor [content]="content()" (contentChange)="updateContent($event)"> </app-editor>
 
 <div class="actions">
   <button class="btn-cancel" title="Annuler" (click)="close()">❌</button>
