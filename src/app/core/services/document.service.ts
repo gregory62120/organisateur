@@ -12,9 +12,11 @@ export class DocumentService {
   /**
    * La page à afficher.
    */
-  readonly documents = computed(() =>
-    this.documentsState().filter((page) => page.id == this.currentPageId()),
-  );
+  readonly documents = computed(() => {
+    const document = this.documentsState();
+    console.log(document);
+    return document.filter((page) => page.id == this.currentPageId());
+  });
 
   /**
    * Identifiant de la page actuellement affichée.
@@ -165,6 +167,11 @@ export class DocumentService {
           : page,
       ),
     );
+  }
+
+  updateDocuments(content: DocumentPage[]) {
+    console.log('content', content);
+    this.documentsState.update(() => content);
   }
 
   private getCurrentDocumentIdFromUrl(): string | null {

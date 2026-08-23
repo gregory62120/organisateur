@@ -27,6 +27,10 @@ export class TaskService {
     this.save();
   }
 
+  updateTask(content: Task[]) {
+    this.tasks.update(() => content);
+  }
+
   delete(id: string) {
     this.tasks.update((list) => list.filter((t) => t.id !== id));
     this.save();

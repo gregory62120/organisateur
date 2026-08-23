@@ -1,0 +1,30 @@
+.sync-actions {
+  margin-top: auto;
+  padding: 8px 0;
+}
+
+.sync-actions a[mat-list-item] {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.sync-actions .material-symbols-outlined {
+  margin-right: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sync-actions .loading {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

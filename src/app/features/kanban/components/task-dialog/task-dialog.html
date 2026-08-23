@@ -1,5 +1,5 @@
 <h2>
-  {{ task.title }}
+  <input [(ngModel)]="task.title" />
 </h2>
 
 <app-editor [content]="content()" (contentChange)="updateContent($event)"> </app-editor>
