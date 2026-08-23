@@ -14,7 +14,5 @@ export class ProjectHomeComponent {
 
   async open() {
     const project = await this.service.create('Mon premier projet');
-
-    console.log(project);
   }
 }

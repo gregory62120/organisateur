@@ -28,7 +28,6 @@ export class StorageService {
   }
 
   getRoot(): FileSystemDirectoryHandle | undefined {
-    console.log('getRoot');
     const root = this.rootState();
     return root;
   }
@@ -36,7 +35,6 @@ export class StorageService {
   async write(path: string, content: string): Promise<void> {
     const root = this.getRoot();
     if (!root) {
-      console.log('erreur projet fermée');
       return;
     }
     const handle = await root.getFileHandle(path, {
@@ -53,12 +51,9 @@ export class StorageService {
   }
 
   async read(path: string): Promise<string | undefined> {
-    console.log('read');
-    console.log('check is open');
     while (this.modal.isOpen()) {}
     const root = this.getRoot();
     if (!root) {
-      console.log('erreur projet fermée');
       this.modal.openPopup();
       return;
     }

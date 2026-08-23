@@ -27,7 +27,6 @@ export class DocumentManagerComponent implements OnInit {
   private isInitialize: boolean = true;
 
   constructor() {
-    effect(() => console.log(this.content()));
 
     // Se réactualiser quand un projet est ouvert
     effect(() => {
@@ -54,7 +53,6 @@ export class DocumentManagerComponent implements OnInit {
   }
 
   private async init(): Promise<void> {
-    console.log('init');
     if (!this.storage.getRoot()) {
       this.modal.openPopup();
       return;
@@ -69,7 +67,6 @@ export class DocumentManagerComponent implements OnInit {
   }
 
   onContentChange(content: unknown): void {
-    console.log('onContentChange', content);
     if (this.isInitialize) {
       return;
     }

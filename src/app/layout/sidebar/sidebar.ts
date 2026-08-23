@@ -75,11 +75,9 @@ export class Sidebar {
     effect(async () => {
       const count = this.storageService.projectOpened();
       if (count > 0) {
-        console.log('lecture config');
         let configContent;
         configContent = await this.storageService.read('config.json');
 
-        console.log('72', configContent);
         if (configContent) {
           try {
             const config = JSON.parse(configContent);
@@ -123,8 +121,6 @@ export class Sidebar {
       }
 
       await this.githubSync.pull(token);
-
-      console.log('Projet récupéré depuis GitHub');
     } catch (error) {
       console.error('Erreur lors de la récupération GitHub', error);
     }

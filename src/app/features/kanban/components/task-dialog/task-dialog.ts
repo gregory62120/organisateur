@@ -27,7 +27,6 @@ export class TaskDialogComponent {
   }
 
   save() {
-    console.log(this.task);
     this.taskService.update({
       ...this.task,
       description: this.content() ?? '',

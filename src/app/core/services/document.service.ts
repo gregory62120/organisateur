@@ -14,7 +14,6 @@ export class DocumentService {
    */
   readonly documents = computed(() => {
     const document = this.documentsState();
-    console.log(document);
     return document.filter((page) => page.id == this.currentPageId());
   });
 
@@ -30,16 +29,12 @@ export class DocumentService {
   private readonly router = inject(Router);
 
   constructor(storageService: StorageService) {
-    console.log('init service');
     effect(() => {
       const documentState = this.documentsState();
-      console.log('écriture', documentState);
       if (documentState.length) {
         storageService.write('document.json', JSON.stringify(documentState));
       }
     });
-    effect(() => console.log(this.currentPageId()));
-    effect(() => console.log(this.documents()));
   }
 
   /**
@@ -53,8 +48,6 @@ export class DocumentService {
     const id = this.getCurrentDocumentIdFromUrl();
 
     const page = id ? this.getPagebyId(id) : this.getOrCreateRootPage();
-
-    console.log('refresh', page);
 
     if (page) {
       if (id) {
@@ -77,12 +70,10 @@ export class DocumentService {
   async loadDocumentFromStorage() {
     try {
       const content = await this.storage.read('document.json');
-      console.log('loadDocumentFromStorage');
       if (content) {
         this.documentsState.update(() => JSON.parse(content));
       }
     } catch {
-      console.log('loadDocumentFromStorage 1');
       this.documentsState.set([]);
     }
   }
@@ -106,9 +97,7 @@ export class DocumentService {
       updatedAt: now,
     };
 
-    console.log('getOrCreateRootPage');
     this.documentsState.update((documents) => {
-      console.log('update');
       return [...documents, root];
     });
 
@@ -155,7 +144,6 @@ export class DocumentService {
    * Met à jour le contenu d'une page.
    */
   updateContent(content: string): void {
-    console.log('updateContent');
     this.documentsState.update((documents) =>
       documents.map((page) =>
         page.id === this.currentPageId()
@@ -170,7 +158,6 @@ export class DocumentService {
   }
 
   updateDocuments(content: DocumentPage[]) {
-    console.log('content', content);
     this.documentsState.update(() => content);
   }
 
