@@ -54,6 +54,8 @@ export class StorageService {
 
   async read(path: string): Promise<string | undefined> {
     console.log('read');
+    console.log('check is open');
+    while (this.modal.isOpen()) {}
     const root = this.getRoot();
     if (!root) {
       console.log('erreur projet fermée');

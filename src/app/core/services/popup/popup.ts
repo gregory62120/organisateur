@@ -10,6 +10,7 @@ export class PopupService {
   private dialogRef?: MatDialogRef<Popup>;
 
   openPopup() {
+    console.log('open popup test');
     this.dialogRef = this.dialog.open(Popup, {
       height: '300px',
       width: '600px',
@@ -21,5 +22,9 @@ export class PopupService {
       this.dialogRef.close();
       this.dialogRef = undefined;
     }
+  }
+
+  isOpen(): boolean {
+    return !!this.dialogRef;
   }
 }

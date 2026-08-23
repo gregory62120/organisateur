@@ -9,12 +9,7 @@
 </mat-nav-list>
 
 <div class="sync-actions">
-  <a
-    mat-list-item
-    href="#"
-    (click)="$event.preventDefault(); synchronize()"
-    [disabled]="syncing()"
-  >
+  <a mat-list-item href="#" (click)="$event.preventDefault(); synchronize()" [disabled]="syncing()">
     <span class="material-symbols-outlined" [class.loading]="syncing()">
       {{ syncing() ? 'sync_problem' : 'cloud_upload' }}
     </span>

@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject, OnInit } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 
 import { MatListModule } from '@angular/material/list';
 import { GithubSyncService } from '../../core/services/github-sync.service';
+import { StorageService } from '../../core/services/storage.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -16,6 +17,7 @@ import { GithubSyncService } from '../../core/services/github-sync.service';
 })
 export class Sidebar {
   private readonly githubSync = inject(GithubSyncService);
+  private readonly storageService = inject(StorageService);
 
   readonly syncing = this.githubSync.syncing;
 
@@ -66,10 +68,31 @@ export class Sidebar {
   ];
 
   constructor() {
-    this.githubSync.setConfig({
-      owner: 'gregory62120',
-      repo: 'sauvegarde-organisateur',
-      branch: 'main',
+    this.loadConfig();
+  }
+
+  async loadConfig() {
+    effect(async () => {
+      const count = this.storageService.projectOpened();
+      if (count > 0) {
+        console.log('lecture config');
+        let configContent;
+        configContent = await this.storageService.read('config.json');
+
+        console.log('72', configContent);
+        if (configContent) {
+          try {
+            const config = JSON.parse(configContent);
+            this.githubSync.setConfig({
+              owner: config.github.owner,
+              repo: config.github.repo,
+              branch: config.github.branch,
+            });
+          } catch (error) {
+            console.error('Error parsing config.json', error);
+          }
+        }
+      }
     });
   }
 
