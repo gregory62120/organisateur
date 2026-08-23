@@ -1,0 +1,15 @@
+<h1>Calendrier projet</h1>
+
+<mat-calendar (selectedChange)="change($event)"> </mat-calendar>
+
+<h2>Tâches prévues</h2>
+
+@for (task of tasks; track task.id) {
+  <div>
+    {{ task.title }}
+
+    @if (task.status !== 'DONE') {
+      ⚠️
+    }
+  </div>
+}

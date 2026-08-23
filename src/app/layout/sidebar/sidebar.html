@@ -1,0 +1,34 @@
+<h2 class="sidebar-title">Gestion Projet</h2>
+
+<mat-nav-list>
+  @for (item of menu; track item.url) {
+    <a mat-list-item [routerLink]="item.url">
+      {{ item.label }}
+    </a>
+  }
+</mat-nav-list>
+
+<div class="sync-actions">
+  <a mat-list-item href="#" (click)="$event.preventDefault(); synchronize()" [disabled]="syncing()">
+    <span class="material-symbols-outlined" [class.loading]="syncing()">
+      {{ syncing() ? 'sync_problem' : 'cloud_upload' }}
+    </span>
+    <span>
+      {{ syncing() ? 'Synchronisation...' : 'Synchroniser GitHub Sortant' }}
+    </span>
+  </a>
+
+  <a
+    mat-list-item
+    href="#"
+    (click)="$event.preventDefault(); pullFromGithub()"
+    [disabled]="pulling()"
+  >
+    <span class="material-symbols-outlined" [class.loading]="pulling()">
+      {{ pulling() ? 'sync_problem' : 'cloud_download' }}
+    </span>
+    <span>
+      {{ pulling() ? 'Synchronisation...' : 'Synchroniser GitHub Entrant' }}
+    </span>
+  </a>
+</div>

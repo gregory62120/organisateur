@@ -1,0 +1,93 @@
+.task {
+  background: white;
+
+  padding: 15px;
+
+  border-radius: 10px;
+
+  border: 1px solid #e5e7eb;
+
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  margin-bottom: 10px;
+
+  cursor: pointer;
+
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.task:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+
+  transform: translateY(-2px);
+}
+
+h3 {
+  margin: 0;
+
+  font-size: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+
+  padding: 8px 14px;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+/* Bouton supression */
+
+.btn-delete {
+  background: #f97316;
+
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #ea580c;
+}
+
+/* Bouton annuler */
+
+.btn-cancel {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #dc2626;
+}
+
+.actions {
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 10px;
+}
+
+.actions button {
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0;
+
+  border-radius: 8px;
+}

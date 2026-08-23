@@ -1,0 +1,10 @@
+<h2>
+  <input [(ngModel)]="task.title" />
+</h2>
+
+<app-editor [content]="content()" (contentChange)="updateContent($event)"> </app-editor>
+
+<div class="actions">
+  <button class="btn-cancel" title="Annuler" (click)="close()">❌</button>
+  <button class="btn-save" title="Sauvegarder" (click)="save()">💾</button>
+</div>

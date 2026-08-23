@@ -1,0 +1,39 @@
+<h1>
+  {{ task.title }}
+</h1>
+
+<h3>Description</h3>
+
+<p>
+  {{ task.description }}
+</p>
+
+<h3>Checklist</h3>
+
+@for (item of task.checklist; track item.id) {
+  <label>
+    <input type="checkbox" [checked]="item.completed" />
+
+    {{ item.label }}
+  </label>
+}
+
+<h3>Commentaires</h3>
+
+@for (comment of task.comments; track comment.id) {
+  <div>
+    <b>
+      {{ comment.author }}
+    </b>
+
+    :
+
+    {{ comment.message }}
+  </div>
+}
+
+<h3>Documents</h3>
+
+@for (doc of task.attachments; track doc) {
+  <div>📎 {{ doc }}</div>
+}

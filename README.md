@@ -1,59 +1,65 @@
-# Organisateur
+# Gestion Projet Local
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.0.
+Application Angular de gestion de projet offline.
 
-## Development server
+## Fonctionnalités
 
-To start a local development server, run:
+- Kanban
+- Gantt
+- Calendrier
+- Documents
+- Images
+- ZIP Import/Export
+- Fonctionnement hors ligne
 
-```bash
+## Installation
+
+npm install
+
+## Démarrage
+
 ng serve
-```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Stockage
 
-## Code scaffolding
+Les projets sont stockés localement
+dans des dossiers transportables.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+TipTap configuration
+ffloatingToolbar pour mettre la bar en mode floating
 
-```bash
-ng generate component component-name
-```
+configuration de la toolbar
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+export const ATE_DEFAULT_TOOLBAR_CONFIG: AteToolbarConfig = {
+bold: true,
+italic: true,
+underline: true,
+strike: true,
+code: true,
+codeBlock: true,
+superscript: true, // Disabled by default (opt-in)
+subscript: true, // Disabled by default (opt-in)
+highlight: true, // Disabled by default (opt-in)
+highlightPicker: true,
+heading1: true,
+heading2: true,
+heading3: true,
+bulletList: true,
+orderedList: true,
+blockquote: true,
+alignLeft: true, // Disabled by default (opt-in)
+alignCenter: true, // Disabled by default (opt-in)
+alignRight: true, // Disabled by default (opt-in)
+alignJustify: true, // Disabled by default (opt-in)
+link: true,
+image: true,
+horizontalRule: true, // Disabled by default (opt-in)
+table: true,
+undo: true,
+redo: true,
+clear: true, // Disabled by default (opt-in)
+textColor: true,
+separator: true,
+};
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+TOKEN accès MAC GITHUB: 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

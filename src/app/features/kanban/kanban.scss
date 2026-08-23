@@ -1,0 +1,89 @@
+.board {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.column {
+  width: 280px;
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.tasks {
+  min-height: 300px;
+  padding: 10px;
+}
+
+.task-wrapper {
+  margin-bottom: 10px;
+  cursor: grab;
+}
+
+.task-wrapper:active {
+  cursor: grabbing;
+}
+
+/* Animation pendant le déplacement */
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px #0004;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.tasks.cdk-drop-list-dragging .task-wrapper:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+button {
+  width: 100%;
+  margin-bottom: 10px;
+
+  padding: 8px;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+}
+
+.overlay {
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  z-index: 1000;
+}
+
+.dialog {
+  width: 90vw;
+
+  max-width: 1200px;
+
+  height: 90vh;
+
+  background: white;
+
+  border-radius: 12px;
+
+  padding: 30px;
+
+  overflow: auto;
+}

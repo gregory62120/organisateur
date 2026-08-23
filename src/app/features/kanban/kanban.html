@@ -1,0 +1,26 @@
+<button (click)="openProject()">📂 Ouvrir un projet</button>
+
+<div class="board" cdkDropListGroup>
+  @for (column of columns; track column.status) {
+    <div class="column">
+      <h2>
+        {{ column.name }}
+      </h2>
+
+      <button (click)="addTask(column.status)">+ Ajouter</button>
+
+      <div
+        class="tasks"
+        cdkDropList
+        [cdkDropListData]="tasks(column.status)"
+        (cdkDropListDropped)="drop($event, column.status)"
+      >
+        @for (task of tasks(column.status); track task.id) {
+          <div cdkDrag [cdkDragData]="task" (dblclick)="open(task)">
+            <app-task-card [task]="task" />
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
