@@ -61,5 +61,3 @@ clear: true, // Disabled by default (opt-in)
 textColor: true,
 separator: true,
 };
-
-TOKEN accès MAC GITHUB: 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

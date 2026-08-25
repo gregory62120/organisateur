@@ -1,7 +1,7 @@
-import { computed, effect, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { DocumentPage } from '../../features/tiptap/src/models/document-page.model';
 import { StorageService } from './storage.service';
-import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
