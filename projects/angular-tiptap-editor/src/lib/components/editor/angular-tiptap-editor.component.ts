@@ -1,112 +1,113 @@
 import {
-  Component,
-  ElementRef,
-  input,
-  output,
-  OnDestroy,
-  viewChild,
-  effect,
-  signal,
-  computed,
   AfterViewInit,
-  inject,
-  DestroyRef,
   ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  OnDestroy,
+  output,
+  signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import OfficePaste from '@intevation/tiptap-extension-office-paste';
 import {
   Editor,
   EditorOptions,
   Extension,
-  Node,
-  Mark,
-  JSONContent,
   Extensions,
+  JSONContent,
+  Mark,
+  Node,
 } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
-import { Placeholder, CharacterCount } from '@tiptap/extensions';
-import { Superscript } from '@tiptap/extension-superscript';
-import { Subscript } from '@tiptap/extension-subscript';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Highlight } from '@tiptap/extension-highlight';
-import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
-import OfficePaste from '@intevation/tiptap-extension-office-paste';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Subscript } from '@tiptap/extension-subscript';
+import { Superscript } from '@tiptap/extension-superscript';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { CharacterCount, Placeholder } from '@tiptap/extensions';
 import { Node as PMNode } from '@tiptap/pm/model';
+import StarterKit from '@tiptap/starter-kit';
 
+import { Injector, Type } from '@angular/core';
+import { NgControl } from '@angular/forms';
+import { ATE_GLOBAL_CONFIG } from '../../config/ate-global-config.token';
+import {
+  AteSlashCommandsConfig,
+  filterSlashCommands,
+} from '../../config/ate-slash-commands.config';
+import { AteNoopValueAccessorDirective } from '../../directives/ate-noop-value-accessor.directive';
 import { AteResizableImage } from '../../extensions/ate-resizable-image.extension';
-import { AteUploadProgress } from '../../extensions/ate-upload-progress.extension';
 import { AteTableExtension } from '../../extensions/ate-table.extension';
 import { AteTiptapStateExtension } from '../../extensions/ate-tiptap-state.extension';
-import { AteToolbarComponent } from '../toolbar/ate-toolbar.component';
-import { AteBubbleMenuComponent } from '../bubble-menus/text/ate-bubble-menu.component';
-import { AteImageBubbleMenuComponent } from '../bubble-menus/image/ate-image-bubble-menu.component';
-import { AteTableBubbleMenuComponent } from '../bubble-menus/table/ate-table-bubble-menu.component';
-import { AteCellBubbleMenuComponent } from '../bubble-menus/table/ate-cell-bubble-menu.component';
-import { AteLinkBubbleMenuComponent } from '../bubble-menus/link/ate-link-bubble-menu.component';
-import { AteColorBubbleMenuComponent } from '../bubble-menus/color/ate-color-bubble-menu.component';
-import { AteSlashCommandsComponent } from '../slash-commands/ate-slash-commands.component';
-import { AteBlockControlsComponent } from './ate-block-controls.component';
-import { AteCustomSlashCommands } from '../../models/ate-slash-command.model';
-import { AteEditToggleComponent } from '../edit-toggle/ate-edit-toggle.component';
-import { AteImageService } from '../../services/ate-image.service';
-import { AteI18nService, SupportedLocale } from '../../services/ate-i18n.service';
-import { AteEditorCommandsService } from '../../services/ate-editor-commands.service';
-import { AteColorPickerService } from '../../services/ate-color-picker.service';
-import { AteLinkService } from '../../services/ate-link.service';
-import { AteExportService } from '../../services/ate-export.service';
-import { AteEditorRegistry } from '../../services/ate-editor-registry.service';
-import { AteNoopValueAccessorDirective } from '../../directives/ate-noop-value-accessor.directive';
+import { AteUploadProgress } from '../../extensions/ate-upload-progress.extension';
 import { AteStateCalculator } from '../../models/ate-editor-state.model';
-import { NgControl } from '@angular/forms';
-import {
-  filterSlashCommands,
-  AteSlashCommandsConfig,
-} from '../../config/ate-slash-commands.config';
-import { registerAngularComponent } from '../../node-view/ate-register-angular-component';
+import { AteCustomSlashCommands } from '../../models/ate-slash-command.model';
 import { RegisterAngularComponentOptions } from '../../node-view/ate-node-view.models';
-import { ATE_GLOBAL_CONFIG } from '../../config/ate-global-config.token';
-import { Type, Injector } from '@angular/core';
+import { registerAngularComponent } from '../../node-view/ate-register-angular-component';
+import { AteColorPickerService } from '../../services/ate-color-picker.service';
+import { AteEditorCommandsService } from '../../services/ate-editor-commands.service';
+import { AteEditorRegistry } from '../../services/ate-editor-registry.service';
+import { AteExportService } from '../../services/ate-export.service';
+import { AteI18nService, SupportedLocale } from '../../services/ate-i18n.service';
+import { AteImageService } from '../../services/ate-image.service';
+import { AteLinkService } from '../../services/ate-link.service';
+import { AteColorBubbleMenuComponent } from '../bubble-menus/color/ate-color-bubble-menu.component';
+import { AteImageBubbleMenuComponent } from '../bubble-menus/image/ate-image-bubble-menu.component';
+import { AteLinkBubbleMenuComponent } from '../bubble-menus/link/ate-link-bubble-menu.component';
+import { AteCellBubbleMenuComponent } from '../bubble-menus/table/ate-cell-bubble-menu.component';
+import { AteTableBubbleMenuComponent } from '../bubble-menus/table/ate-table-bubble-menu.component';
+import { AteBubbleMenuComponent } from '../bubble-menus/text/ate-bubble-menu.component';
+import { AteEditToggleComponent } from '../edit-toggle/ate-edit-toggle.component';
+import { AteSlashCommandsComponent } from '../slash-commands/ate-slash-commands.component';
+import { AteToolbarComponent } from '../toolbar/ate-toolbar.component';
+import { AteBlockControlsComponent } from './ate-block-controls.component';
 
-import { AteSelectionCalculator } from '../../extensions/calculators/ate-selection.calculator';
-import { AteMarksCalculator } from '../../extensions/calculators/ate-marks.calculator';
-import { AteTableCalculator } from '../../extensions/calculators/ate-table.calculator';
-import { AteImageCalculator } from '../../extensions/calculators/ate-image.calculator';
-import { AteStructureCalculator } from '../../extensions/calculators/ate-structure.calculator';
 import { AteDiscoveryCalculator } from '../../extensions/calculators/ate-discovery.calculator';
+import { AteImageCalculator } from '../../extensions/calculators/ate-image.calculator';
+import { AteMarksCalculator } from '../../extensions/calculators/ate-marks.calculator';
+import { AteSelectionCalculator } from '../../extensions/calculators/ate-selection.calculator';
+import { AteStructureCalculator } from '../../extensions/calculators/ate-structure.calculator';
+import { AteTableCalculator } from '../../extensions/calculators/ate-table.calculator';
 
-import { AteToolbarConfig } from '../../models/ate-toolbar.model';
+import { Router } from '@angular/router';
+import { concat, defer, Observable, of, tap } from 'rxjs';
+import { DocumentService } from '../../../../../../src/app/core/services/document.service';
 import {
-  AteBubbleMenuConfig,
-  AteImageBubbleMenuConfig,
-  AteTableBubbleMenuConfig,
-  AteCellBubbleMenuConfig,
-} from '../../models/ate-bubble-menu.model';
-import {
-  AteEditorConfig,
-  AteAngularNode,
-  AteBlockControlsMode,
-  AteAutofocusMode,
-} from '../../models/ate-editor-config.model';
-import { AteLinkClickBehavior } from '../../extensions/ate-link-click-behavior.extension';
-import { AteBlockControlsExtension } from '../../extensions/ate-block-controls.extension';
-import {
-  ATE_DEFAULT_TOOLBAR_CONFIG,
   ATE_DEFAULT_BUBBLE_MENU_CONFIG,
+  ATE_DEFAULT_CELL_MENU_CONFIG,
+  ATE_DEFAULT_CONFIG,
   ATE_DEFAULT_IMAGE_BUBBLE_MENU_CONFIG,
   ATE_DEFAULT_IMAGE_UPLOAD_CONFIG,
   ATE_DEFAULT_TABLE_MENU_CONFIG,
-  ATE_DEFAULT_CELL_MENU_CONFIG,
-  ATE_DEFAULT_CONFIG,
+  ATE_DEFAULT_TOOLBAR_CONFIG,
 } from '../../config/ate-editor.config';
-import { concat, defer, Observable, of, tap } from 'rxjs';
+import { AteBlockControlsExtension } from '../../extensions/ate-block-controls.extension';
+import { AteLinkClickBehavior } from '../../extensions/ate-link-click-behavior.extension';
+import {
+  AteBubbleMenuConfig,
+  AteCellBubbleMenuConfig,
+  AteImageBubbleMenuConfig,
+  AteTableBubbleMenuConfig,
+} from '../../models/ate-bubble-menu.model';
+import {
+  AteAngularNode,
+  AteAutofocusMode,
+  AteBlockControlsMode,
+  AteEditorConfig,
+} from '../../models/ate-editor-config.model';
 import {
   AteImageUploadHandler,
   AteImageUploadOptions,
   AteImageUploadResult,
 } from '../../models/ate-image.model';
-import { Router } from '@angular/router';
+import { AteToolbarConfig } from '../../models/ate-toolbar.model';
 
 // Slash commands configuration is handled dynamically via slashCommandsConfigComputed
 
@@ -1122,6 +1123,7 @@ export class AngularTiptapEditorComponent implements AfterViewInit, OnDestroy {
   private _editorFullyInitialized = signal<boolean>(false);
   private _hoveredBlock = signal<{ node: PMNode; element: HTMLElement; pos: number } | null>(null);
   private readonly router = inject(Router);
+  private readonly documentService = inject(DocumentService);
 
   // Anti-echo: track last emitted HTML to prevent cursor reset on parent echo
   private lastEmittedHtml: string | null = null;
@@ -1589,7 +1591,7 @@ export class AngularTiptapEditorComponent implements AfterViewInit, OnDestroy {
       TextAlign.configure({
         types: ['heading', 'paragraph', 'resizableImage'],
       }),
-      AteLinkClickBehavior(this.router),
+      AteLinkClickBehavior(this.router, this.documentService),
       Highlight.configure({
         multicolor: true,
         HTMLAttributes: {

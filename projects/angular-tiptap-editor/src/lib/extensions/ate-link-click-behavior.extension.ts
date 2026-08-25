@@ -1,8 +1,9 @@
 import { Router } from '@angular/router';
-import { Extension, getAttributes } from '@tiptap/core';
+import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { DocumentService } from '../../../../../src/app/core/services/document.service';
 
-export function AteLinkClickBehavior(router: Router) {
+export function AteLinkClickBehavior(router: Router, documentService: DocumentService) {
   return Extension.create({
     name: 'linkClickBehavior',
 
@@ -33,6 +34,7 @@ export function AteLinkClickBehavior(router: Router) {
               event.stopPropagation();
 
               router.navigateByUrl(href);
+              documentService.setCurrentPageId(href.split('document/')[1]);
 
               return true;
             },
