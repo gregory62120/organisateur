@@ -19,10 +19,10 @@ export class StorageService {
   readonly isOpen = computed(() => this.rootState() !== undefined);
 
   async openProject(): Promise<void> {
-    const directory = await window.showDirectoryPicker({
-      mode: 'readwrite',
-    });
-
+    const directory =
+      'showDirectoryPicker' in window
+        ? await window.showDirectoryPicker({ mode: 'readwrite' })
+        : await navigator.storage.getDirectory();
     this.rootState.set(directory);
     this.projectOpenedCount.update((count) => count + 1);
   }
