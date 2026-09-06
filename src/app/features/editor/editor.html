@@ -7,6 +7,16 @@
       editorState().activePanel === 'config' || editorState().isTransitioning
     "
   >
+    @if (tocConfig().enabled) {
+      <ate-table-of-contents
+        [floating]="tocConfig().floating"
+        [position]="tocConfig().position"
+        [variant]="tocConfig().variant"
+        [hoverExpand]="tocConfig().hoverExpand"
+        [showTitle]="tocConfig().showTitle"
+      />
+    }
+
     <!-- Main editor -->
     <main class="editor-main">
       <!-- Main content wrapper with smooth zoom-fade transition -->

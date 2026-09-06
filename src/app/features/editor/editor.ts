@@ -1,12 +1,7 @@
 import { Component, computed, effect, forwardRef, inject, input, output } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Editor, Extensions } from '@tiptap/core';
-import {
-  AngularTiptapEditorComponent,
-  AteEditorConfig,
-  AteI18nService,
-  AteImageUploadResult,
-} from '../../../../projects/angular-tiptap-editor/src/public-api';
+import { AngularTiptapEditorComponent, AteEditorConfig, AteI18nService, AteImageUploadResult, AteTableOfContentsComponent } from '../../../../projects/angular-tiptap-editor/src/public-api';
 import { ToastContainerComponent } from '../tiptap/src/components/toast-container.component';
 import { Drawing } from '../tiptap/src/extensions/drawing.extension';
 import { TaskItem, TaskList } from '../tiptap/src/extensions/task.extension';
@@ -16,7 +11,7 @@ import { ToastService } from '../tiptap/src/services/toast.service';
 @Component({
   selector: 'app-editor',
   standalone: true,
-  imports: [AngularTiptapEditorComponent, ToastContainerComponent],
+  imports: [AngularTiptapEditorComponent, ToastContainerComponent, AteTableOfContentsComponent],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -43,6 +38,7 @@ export class EditorComponent {
   readonly bubbleMenuConfig = this.configService.bubbleMenuConfig;
   readonly slashCommandsConfig = this.configService.slashCommandsConfig;
   readonly currentLocale = this.i18nService.currentLocale;
+  readonly tocConfig = this.configService.tocConfig;
 
   readonly finalTiptapExtensions = computed(
     () => {
