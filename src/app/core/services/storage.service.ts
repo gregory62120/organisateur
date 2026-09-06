@@ -61,6 +61,14 @@ export class StorageService {
 
     const file = await handle.getFile();
 
-    return file.text();
+    return (
+      file.text() ?? {
+        github: {
+          owner: 'gregory62120',
+          repo: 'sauvegarde-organisateur',
+          branch: 'main',
+        },
+      }
+    );
   }
 }
