@@ -16,6 +16,15 @@ import { StorageService } from '../../core/services/storage.service';
   templateUrl: './sidebar.html',
 })
 export class Sidebar {
+  private readonly DEFAULT_CONFIG: string = `
+  {
+  "github": {
+    "owner": "gregory62120",
+    "repo": "sauvegarde-organisateur",
+    "branch": "main"
+  }
+}
+  `;
   private readonly githubSync = inject(GithubSyncService);
   private readonly storageService = inject(StorageService);
 
@@ -76,7 +85,12 @@ export class Sidebar {
       const count = this.storageService.projectOpened();
       if (count > 0) {
         let configContent;
-        configContent = await this.storageService.read('config.json');
+
+        try {
+          configContent = await this.storageService.read('config.json');
+        } catch (error) {
+          configContent = this.DEFAULT_CONFIG;
+        }
 
         if (configContent) {
           try {
