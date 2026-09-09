@@ -26,7 +26,9 @@ export class LogService {
     const files = await this.findLogFiles(directoryHandle, application, options.date);
 
     const results = await Promise.all(
-      files.map((file) => this.readLogFile(file, source, application, options)),
+      files.map((file) =>
+        this.readLogFile(file, source, application.split('-serveur')[0], options),
+      ),
     );
 
     return results.flat();
