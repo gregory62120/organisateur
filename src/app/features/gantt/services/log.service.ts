@@ -87,113 +87,154 @@ export class LogService {
   ): Promise<LogEntry[]> {
     const file = await fileHandle.getFile();
 
-    const content = await file.text();
+    const text = await file.text();
 
-    const lines = content.split(/\r?\n/);
+    const lines = text.split(/\r?\n/);
 
     const entries: LogEntry[] = [];
+    let currentLines: string[] = [];
 
     for (const line of lines) {
-      if (!line.trim()) {
-        continue;
+      if (this.isLogStart(line)) {
+        // On termine l'entrée précédente
+        if (currentLines.length > 0) {
+          const entry = this.parseLogBlock(currentLines, source, application);
+
+          if (entry && this.isInsideTimeRange(entry.timestamp, options)) {
+            entries.push(entry);
+          }
+        }
+
+        // Nouvelle entrée
+        currentLines = [line];
+      } else if (currentLines.length > 0) {
+        // Suite du message : stacktrace, lignes SQL, etc.
+        currentLines.push(line);
       }
+    }
 
-      const entry = this.parseLine(line, source, application);
+    // Dernière entrée
+    if (currentLines.length > 0) {
+      const entry = this.parseLogBlock(currentLines, source, application);
 
-      if (!entry) {
-        continue;
+      if (entry && this.isInsideTimeRange(entry.timestamp, options)) {
+        entries.push(entry);
       }
-
-      if (
-        !this.isInsideTimeRange(entry.timestamp, options.date, options.startTime, options.endTime)
-      ) {
-        continue;
-      }
-
-      entries.push(entry);
     }
 
     return entries;
   }
 
-  /**
-   * Parse une ligne de log.
-   *
-   * Exemple attendu :
-   *
-   * 2026-09-09 10:15:32.123 INFO Message...
-   *
-   * ou :
-   *
-   * 2026-09-09T10:15:32.123 ERROR Message...
-   */
-  private parseLine(line: string, source: LogSource, application: string): LogEntry | null {
-    const match = line.match(
-      /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2}(?:[.,]\d{1,3})?)(?:\s+)(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)(?:\s+)(.*)$/i,
+  private isInsideTimeRange(
+    timestamp: Date,
+    options: {
+      startTime?: string;
+      endTime?: string;
+    },
+  ): boolean {
+    const hours = timestamp.getHours();
+    const minutes = timestamp.getMinutes();
+
+    const timeInMinutes = hours * 60 + minutes;
+
+    if (options.startTime) {
+      const [startHours, startMinutes] = options.startTime.split(':').map(Number);
+
+      const startInMinutes = startHours * 60 + startMinutes;
+
+      if (timeInMinutes < startInMinutes) {
+        return false;
+      }
+    }
+
+    if (options.endTime) {
+      const [endHours, endMinutes] = options.endTime.split(':').map(Number);
+
+      const endInMinutes = endHours * 60 + endMinutes;
+
+      if (timeInMinutes > endInMinutes) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private isLogStart(line: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,3})?\|/.test(line);
+  }
+
+  private parseLogBlock(lines: string[], source: LogSource, application: string): LogEntry | null {
+    if (lines.length === 0) {
+      return null;
+    }
+
+    const firstLine = lines[0];
+
+    const match = firstLine.match(
+      /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2}(?:[.,]\d{1,3})?)\|(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\|(.+)$/i,
     );
 
     if (!match) {
       return null;
     }
 
-    const date = match[1];
-    const time = match[2].replace(',', '.');
-    const level = match[3].toUpperCase() as LogLevel;
-    const message = match[4];
+    const [, date, time, level, rest] = match;
 
-    const timestamp = new Date(`${date}T${time}`);
+    const timestamp = new Date(`${date}T${time.replace(',', '.')}`);
 
     if (Number.isNaN(timestamp.getTime())) {
       return null;
     }
+
+    const fields = rest.split('|');
+
+    const applicationIndex = fields.indexOf(application);
+
+    if (applicationIndex === -1) {
+      return null;
+    }
+
+    if (fields.length <= applicationIndex + 2) {
+      return null;
+    }
+
+    // Message de la première ligne
+    const firstMessage = fields
+      .slice(applicationIndex + 2)
+      .join('|')
+      .trim();
+
+    // Toutes les lignes suivantes sont la continuation
+    const continuation = lines.slice(1).join('\n');
+
+    const message = continuation ? `${firstMessage}\n${continuation}` : firstMessage;
 
     return {
       sourceId: source.id,
       sourceName: source.name,
       application,
       timestamp,
-      level,
+      level: this.normalizeLevel(level),
       message,
-      raw: line,
+      raw: lines.join('\n'),
     };
   }
 
-  /**
-   * Vérifie que le log est compris dans
-   * l'intervalle sélectionné.
-   */
-  private isInsideTimeRange(
-    timestamp: Date,
-    date: string,
-    startTime: string,
-    endTime: string,
-  ): boolean {
-    const timestampDate = this.formatDate(timestamp);
+  private normalizeLevel(level: string): LogLevel {
+    const normalized = level.toUpperCase();
 
-    if (timestampDate !== date) {
-      return false;
+    switch (normalized) {
+      case 'TRACE':
+      case 'DEBUG':
+      case 'INFO':
+      case 'WARN':
+      case 'ERROR':
+      case 'FATAL':
+        return normalized;
+
+      default:
+        return 'UNKNOWN';
     }
-
-    const time = this.formatTime(timestamp);
-
-    return time >= startTime && time <= endTime;
-  }
-
-  private formatDate(date: Date): string {
-    const year = date.getFullYear();
-
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-  }
-
-  private formatTime(date: Date): string {
-    const hours = String(date.getHours()).padStart(2, '0');
-
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${hours}:${minutes}`;
   }
 }
