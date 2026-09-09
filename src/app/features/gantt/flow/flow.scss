@@ -1,0 +1,214 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.flow-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 280px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(240, 247, 255, 0.9),
+    rgba(255, 255, 255, 0.98)
+  );
+}
+
+.flow-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  overflow: visible;
+}
+
+.flow-source rect {
+  fill: #ffffff;
+  stroke: #a9c3e8;
+  stroke-width: 1.5;
+}
+
+.node-icon-background {
+  fill: #e9f2ff;
+}
+
+.material-symbols {
+  font-family: 'Material Symbols Outlined';
+  font-size: 26px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'liga';
+}
+
+.flow-source .material-symbols {
+  fill: #1474e8;
+}
+
+.node-title {
+  fill: #172b4d;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.node-description {
+  fill: #54709b;
+  font-size: 13px;
+}
+
+.main-line {
+  stroke: #63aaf5;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.main-point {
+  fill: #ffffff;
+  stroke: #2e8cf0;
+  stroke-width: 3;
+}
+
+.flow-path {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.flow-path.flow-success {
+  stroke: #1db58b;
+}
+
+.flow-path.flow-error {
+  stroke: #ef3535;
+}
+
+.flow-path.flow-pending {
+  stroke: #c6d0dc;
+}
+
+.flow-path.animated {
+  stroke-dasharray: 16 14;
+  animation: flow-dash 1.2s linear infinite;
+}
+
+.flow-path.flow-pending.animated {
+  animation: none;
+}
+
+.route-point {
+  fill: #ffffff;
+  stroke: #62aaf4;
+  stroke-width: 2;
+}
+
+.destination rect {
+  fill: #ffffff;
+  stroke-width: 1.5;
+}
+
+.destination .status-success {
+  stroke: #1db58b;
+}
+
+.destination .status-error {
+  stroke: #ef3535;
+}
+
+.destination .status-pending {
+  fill: #f2f4f7;
+  stroke: #b9c3ce;
+}
+
+.destination-icon-background {
+  fill: #e8f2ff;
+}
+
+.status-success + .destination-icon-background {
+  fill: #dff8ef;
+}
+
+.destination .status-error ~ .destination-icon-background {
+  fill: #ffebeb;
+}
+
+.destination .status-pending ~ .destination-icon-background {
+  fill: #e1e6eb;
+}
+
+.destination-icon {
+  fill: #1474e8;
+}
+
+.status-success ~ .destination-icon {
+  fill: #0ca37b;
+}
+
+.status-error ~ .destination-icon {
+  fill: #e63131;
+}
+
+.status-pending ~ .destination-icon {
+  fill: #8b98a6;
+}
+
+.status-indicator {
+  fill: #16b88a;
+}
+
+.status-error ~ .status-indicator {
+  fill: #ef3535;
+}
+
+.status-pending ~ .status-indicator {
+  fill: #9ba7b4;
+}
+
+.status-icon {
+  fill: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.flow-indicator {
+  fill: #1684f4;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.flow-indicator-core {
+  fill: #ffffff;
+  pointer-events: none;
+}
+
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -30;
+  }
+}
+
+@media (max-width: 700px) {
+  .flow-container {
+    border-radius: 12px;
+  }
+
+  .node-title {
+    font-size: 15px;
+  }
+
+  .node-description {
+    font-size: 11px;
+  }
+}

@@ -1,5 +1,19 @@
 <h1>Planning</h1>
 
+<div class="page">
+  <app-flow
+    [source]="source()"
+    [destinations]="destinations()"
+    [width]="1400"
+    [height]="520"
+    containerWidth="90%"
+    containerHeight="520px"
+    [indicatorDuration]="1800"
+    [animatedArrows]="true"
+    [animatedIndicator]="true"
+  />
+</div>
+
 @for (task of tasks; track task.id) {
   <div class="line">
     <div class="name">
