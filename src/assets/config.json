@@ -1,0 +1,25 @@
+{
+  "logSources": [
+    {
+      "id": "source-1",
+      "name": "Serveur 1",
+      "path": "\\\\serveur1\\logs"
+    },
+    {
+      "id": "source-2",
+      "name": "Serveur 2",
+      "path": "\\\\serveur2\\logs"
+    },
+    {
+      "id": "source-3",
+      "name": "Serveur 3",
+      "path": "\\\\serveur3\\logs"
+    }
+  ],
+  "applications": [
+    "APP_A",
+    "APP_B",
+    "APP_C",
+    "APP_D"
+  ]
+}

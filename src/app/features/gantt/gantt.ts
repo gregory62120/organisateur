@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { FlowComponent } from './flow/flow';
 import { FlowDestination, FlowSource } from './models/flow.models';
+import { LogsComponent } from "./logs.component/logs.component";
 
 @Component({
   selector: 'app-gantt',
@@ -8,7 +9,7 @@ import { FlowDestination, FlowSource } from './models/flow.models';
   standalone: true,
 
   templateUrl: './gantt.html',
-  imports: [FlowComponent],
+  imports: [FlowComponent, LogsComponent],
 })
 export class GanttComponent {
   tasks = [
