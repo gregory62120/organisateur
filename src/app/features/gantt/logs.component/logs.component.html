@@ -34,32 +34,31 @@
 
       <div class="sources-grid">
         @for (source of sources(); track source.id) {
-          <button
-            type="button"
-            class="source-card"
-            [class.selected]="isSourceSelected(source.id)"
-            (click)="selectSource(source)"
-          >
-            <div class="source-icon">📁</div>
+          <div class="source-card" [class.selected]="isSourceSelected(source.id)">
+            <div class="source-information">
+              <div class="source-icon">📁</div>
 
-            <div class="source-info">
-              <div class="source-name">
-                {{ source.name }}
-              </div>
+              <div>
+                <strong>
+                  {{ source.name }}
+                </strong>
 
-              <div class="source-path">
-                {{ source.path }}
+                <span>
+                  {{ source.path }}
+                </span>
               </div>
             </div>
 
-            <div class="source-status">
-              @if (isSourceSelected(source.id)) {
-                <span class="connected"> ✓ Connecté </span>
-              } @else {
-                <span class="not-connected"> Cliquer pour ouvrir </span>
-              }
-            </div>
-          </button>
+            @if (isSourceSelected(source.id)) {
+              <button type="button" class="source-remove" (click)="removeSource(source.id)">
+                Retirer
+              </button>
+            } @else {
+              <button type="button" class="source-button" (click)="selectSource(source)">
+                Sélectionner
+              </button>
+            }
+          </div>
         }
       </div>
 
