@@ -104,27 +104,36 @@ export class LogsComponent {
         mode: 'read',
       });
 
-      const alreadySelected = this.selectedSources().some((item) => item.source.id === source.id);
+      this.selectedSources.update((sources) => {
+        // Si cette source était déjà sélectionnée,
+        // on remplace simplement son handle.
+        const existing = sources.findIndex((selected) => selected.source.id === source.id);
 
-      if (alreadySelected) {
-        this.selectedSources.update((sources) =>
-          sources.map((item) => (item.source.id === source.id ? { source, handle } : item)),
-        );
+        if (existing !== -1) {
+          const updated = [...sources];
+          updated[existing] = {
+            source,
+            handle,
+          };
+          return updated;
+        }
 
+        // Sinon on ajoute la nouvelle instance
+        return [
+          ...sources,
+          {
+            source,
+            handle,
+          },
+        ];
+      });
+    } catch (error) {
+      // L'utilisateur a annulé le sélecteur
+      if ((error as DOMException)?.name === 'AbortError') {
         return;
       }
 
-      this.selectedSources.update((sources) => [
-        ...sources,
-        {
-          source,
-          handle,
-        },
-      ]);
-    } catch (error) {
-      // L'utilisateur a probablement annulé
-      // la sélection du dossier.
-      console.debug('Sélection du dossier annulée', error);
+      console.error('Impossible d’ouvrir le dossier', error);
     }
   }
 
