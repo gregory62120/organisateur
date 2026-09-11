@@ -13,6 +13,12 @@ interface SelectedSource {
   handle: FileSystemDirectoryHandle;
 }
 
+interface LogFeature {
+  id: string;
+  type: string;
+  logs: LogEntry[];
+}
+
 @Component({
   selector: 'app-logs',
   standalone: true,
@@ -74,8 +80,53 @@ export class LogsComponent {
 
   readonly logCount = computed(() => this.logs().length);
 
+  readonly features = computed<LogFeature[]>(() => {
+    const allLogs = this.logs();
+
+    const featureMap = new Map<string, LogFeature>();
+
+    for (const log of allLogs) {
+      const match = log.message.match(/Start Authentification Session with Type:\s*(.+)/i);
+
+      if (!match || !log.requestId) {
+        continue;
+      }
+
+      const type = match[1].trim();
+
+      if (!featureMap.has(log.requestId)) {
+        featureMap.set(log.requestId, {
+          id: log.requestId,
+          type,
+          logs: [],
+        });
+      }
+    }
+
+    // Maintenant on récupère TOUS les logs ayant un des IDs détectés
+    for (const log of allLogs) {
+      if (!log.requestId) {
+        continue;
+      }
+
+      const feature = featureMap.get(log.requestId);
+
+      if (!feature) {
+        continue;
+      }
+
+      feature.logs.push(log);
+    }
+
+    return Array.from(featureMap.values());
+  });
+
   constructor() {
     this.loadConfig();
+  }
+
+  trackFeatureLog(index: number, log: LogEntry): string {
+    return `${log.requestId}-${log.timestamp.getTime()}-${index}`;
   }
 
   // =========================================================

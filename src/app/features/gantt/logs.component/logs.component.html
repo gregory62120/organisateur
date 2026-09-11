@@ -132,7 +132,7 @@
 
     @if (error()) {
       <div class="error-message">
-        <span>⚠</span>
+        <span> ⚠ </span>
 
         {{ error() }}
       </div>
@@ -152,29 +152,38 @@
   </section>
 
   <!-- ===================================================== -->
-  <!-- RESULTATS -->
+  <!-- RESULTATS : LOGS COMPLETS -->
   <!-- ===================================================== -->
 
   @if (searched()) {
     <section class="results-card">
+      <!-- HEADER -->
+
       <div class="results-header">
         <div>
-          <h2>Résultats</h2>
+          <h2>Logs complets</h2>
 
           <span class="result-count">
             {{ logCount() }}
+
             ligne(s)
           </span>
         </div>
 
         <div class="result-info">
           {{ selectedDate() }}
+
           ·
+
           {{ startTime() }}
+
           →
+
           {{ endTime() }}
         </div>
       </div>
+
+      <!-- AUCUN RESULTAT -->
 
       @if (!loading() && logs().length === 0) {
         <div class="empty-state">
@@ -185,6 +194,8 @@
           <p>Aucun fichier ou aucune ligne ne correspond aux critères sélectionnés.</p>
         </div>
       } @else {
+        <!-- LOGS COMPLETS -->
+
         <div class="logs-container">
           @for (log of logs(); track trackLog($index, log)) {
             <div class="log-line">
@@ -212,5 +223,88 @@
         </div>
       }
     </section>
+
+    <!-- ===================================================== -->
+    <!-- SEPARATION VISUELLE -->
+    <!-- ===================================================== -->
+
+    @if (features().length > 0) {
+      <section class="features-section">
+        <!-- ================================================= -->
+        <!-- HEADER FEATURES -->
+        <!-- ================================================= -->
+
+        <div class="features-header">
+          <div>
+            <h2>Fonctionnalités détectées</h2>
+
+            <span>
+              {{ features().length }}
+              fonctionnalité(s)
+            </span>
+          </div>
+        </div>
+
+        <!-- ================================================= -->
+        <!-- FEATURES -->
+        <!-- ================================================= -->
+
+        <div class="features-container">
+          @for (feature of features(); track feature.id) {
+            <article class="feature-card">
+              <!-- FEATURE HEADER -->
+
+              <div class="feature-card-header">
+                <div>
+                  <h3>Authentification Session</h3>
+
+                  <div class="feature-type">
+                    Type :
+
+                    <strong>
+                      {{ feature.type }}
+                    </strong>
+                  </div>
+                </div>
+
+                <div class="feature-id">
+                  ID :
+
+                  {{ feature.id }}
+                </div>
+              </div>
+
+              <!-- LOGS DE LA FEATURE -->
+
+              <div class="feature-logs">
+                @for (log of feature.logs; track trackFeatureLog($index, log)) {
+                  <div class="log-line">
+                    <span class="log-time">
+                      {{ formatTimestamp(log.timestamp) }}
+                    </span>
+
+                    <span class="log-source">
+                      {{ log.sourceName }}
+                    </span>
+
+                    <span class="log-application">
+                      {{ log.application }}
+                    </span>
+
+                    <span class="log-level" [class]="getLevelClass(log.level)">
+                      {{ log.level }}
+                    </span>
+
+                    <span class="log-message">
+                      {{ log.message }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
   }
 </div>

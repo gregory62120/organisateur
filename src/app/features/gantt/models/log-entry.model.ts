@@ -6,6 +6,8 @@ export interface LogEntry {
 
   application: string;
 
+  requestId?: string;
+
   timestamp: Date;
 
   level: LogLevel;

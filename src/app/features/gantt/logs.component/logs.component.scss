@@ -640,3 +640,119 @@
     margin-top: 5px;
   }
 }
+
+/* ========================================================= */
+/* FONCTIONNALITÉS */
+/* ========================================================= */
+
+.features-section {
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.features-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 18px 20px;
+
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 {
+    margin: 0;
+
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  span {
+    display: inline-block;
+
+    margin-top: 4px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+  }
+}
+
+.features-container {
+  display: flex;
+  flex-direction: column;
+
+  gap: 16px;
+
+  padding: 20px;
+}
+
+.feature-card {
+  overflow: hidden;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.feature-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 14px 16px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  background: #f8fafc;
+
+  h3 {
+    margin: 0;
+
+    font-size: 14px;
+    font-weight: 700;
+  }
+}
+
+.feature-type {
+  margin-top: 5px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+
+  strong {
+    color: #4f46e5;
+  }
+}
+
+.feature-id {
+  max-width: 350px;
+
+  overflow: hidden;
+
+  padding: 5px 8px;
+
+  border-radius: 5px;
+
+  background: #eef2ff;
+
+  color: #4f46e5;
+
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 10px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feature-logs {
+  background: #111827;
+
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}

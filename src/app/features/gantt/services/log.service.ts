@@ -174,7 +174,7 @@ export class LogService {
     const firstLine = lines[0];
 
     const match = firstLine.match(
-      /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2}(?:[.,]\d{1,3})?)\|(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\|(.+)$/i,
+      /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2}(?:[.,]\d{1,3})?)\|(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\|(.*)$/i,
     );
 
     if (!match) {
@@ -191,23 +191,35 @@ export class LogService {
 
     const fields = rest.split('|');
 
-    const applicationIndex = fields.indexOf(application);
+    let requestId: string | undefined;
+    let applicationIndex: number;
 
-    if (applicationIndex === -1) {
+    // Format :
+    // LEVEL | APPLICATION | LOGGER | MESSAGE
+    if (fields[0] === application) {
+      applicationIndex = 0;
+    }
+
+    // Format :
+    // LEVEL | REQUEST_ID | APPLICATION | LOGGER | MESSAGE
+    else if (fields.length >= 2 && this.isUuid(fields[0]) && fields[1] === application) {
+      requestId = fields[0];
+      applicationIndex = 1;
+    } else {
       return null;
     }
 
-    if (fields.length <= applicationIndex + 2) {
+    const loggerIndex = applicationIndex + 1;
+
+    if (fields.length <= loggerIndex) {
       return null;
     }
 
-    // Message de la première ligne
     const firstMessage = fields
-      .slice(applicationIndex + 2)
+      .slice(loggerIndex + 1)
       .join('|')
       .trim();
 
-    // Toutes les lignes suivantes sont la continuation
     const continuation = lines.slice(1).join('\n');
 
     const message = continuation ? `${firstMessage}\n${continuation}` : firstMessage;
@@ -216,6 +228,7 @@ export class LogService {
       sourceId: source.id,
       sourceName: source.name,
       application,
+      requestId,
       timestamp,
       level: this.normalizeLevel(level),
       message,
@@ -238,5 +251,9 @@ export class LogService {
       default:
         return 'UNKNOWN';
     }
+  }
+
+  private isUuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   }
 }
