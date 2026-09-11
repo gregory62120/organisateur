@@ -1,0 +1,310 @@
+<div class="logs-page">
+  <!-- ===================================================== -->
+  <!-- HEADER -->
+  <!-- ===================================================== -->
+
+  <header class="page-header">
+    <div>
+      <h1>Logs</h1>
+
+      <p>Consultation des logs des différentes instances</p>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-indicator">Lecture des logs...</div>
+    }
+  </header>
+
+  <!-- ===================================================== -->
+  <!-- FILTRES -->
+  <!-- ===================================================== -->
+
+  <section class="filters-card">
+    <!-- SOURCES -->
+
+    <div class="filter-section">
+      <div class="section-title">
+        <h2>Dossiers partagés</h2>
+
+        <span>
+          {{ selectedSources().length }}
+          / {{ sources().length }}
+        </span>
+      </div>
+
+      <div class="sources-grid">
+        @for (source of sources(); track source.id) {
+          <div class="source-card" [class.selected]="isSourceSelected(source.id)">
+            <div class="source-information">
+              <div class="source-icon">📁</div>
+
+              <div>
+                <strong>
+                  {{ source.name }}
+                </strong>
+
+                <span>
+                  {{ source.path }}
+                </span>
+              </div>
+            </div>
+
+            @if (isSourceSelected(source.id)) {
+              <button type="button" class="source-remove" (click)="removeSource(source.id)">
+                Retirer
+              </button>
+            } @else {
+              <button type="button" class="source-button" (click)="selectSource(source)">
+                Sélectionner
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <p class="hint">
+        Pour chaque source, sélectionne le dossier partagé correspondant sur ton poste.
+      </p>
+    </div>
+
+    <!-- APPLICATIONS -->
+
+    <div class="filter-section">
+      <div class="section-title">
+        <h2>Applications</h2>
+
+        <div class="application-actions">
+          <button type="button" (click)="selectAllApplications()">Tout sélectionner</button>
+
+          <button type="button" (click)="clearApplications()">Tout désélectionner</button>
+        </div>
+      </div>
+
+      <div class="applications-grid">
+        @for (application of applications(); track application) {
+          <label class="application-option" [class.selected]="isApplicationSelected(application)">
+            <input
+              type="checkbox"
+              [checked]="isApplicationSelected(application)"
+              (change)="toggleApplication(application)"
+            />
+
+            <span class="checkbox"></span>
+
+            <span class="application-name">
+              {{ application }}
+            </span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- DATE / HEURES -->
+
+    <div class="filter-section">
+      <div class="date-time-grid">
+        <div class="field">
+          <label for="date"> Date </label>
+
+          <input id="date" type="date" [value]="selectedDate()" (change)="onDateChange($event)" />
+        </div>
+
+        <div class="field">
+          <label for="start-time"> Heure de début </label>
+
+          <input
+            id="start-time"
+            type="time"
+            [value]="startTime()"
+            (change)="onStartTimeChange($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="end-time"> Heure de fin </label>
+
+          <input id="end-time" type="time" [value]="endTime()" (change)="onEndTimeChange($event)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ERREUR -->
+
+    @if (error()) {
+      <div class="error-message">
+        <span> ⚠ </span>
+
+        {{ error() }}
+      </div>
+    }
+
+    <!-- BOUTON -->
+
+    <div class="filter-actions">
+      <button type="button" class="search-button" [disabled]="loading()" (click)="search()">
+        @if (loading()) {
+          Lecture...
+        } @else {
+          🔍 Rechercher les logs
+        }
+      </button>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+  <!-- RESULTATS : LOGS COMPLETS -->
+  <!-- ===================================================== -->
+
+  @if (searched()) {
+    <section class="results-card">
+      <!-- HEADER -->
+
+      <div class="results-header">
+        <div>
+          <h2>Logs complets</h2>
+
+          <span class="result-count">
+            {{ logCount() }}
+
+            ligne(s)
+          </span>
+        </div>
+
+        <div class="result-info">
+          {{ selectedDate() }}
+
+          ·
+
+          {{ startTime() }}
+
+          →
+
+          {{ endTime() }}
+        </div>
+      </div>
+
+      <!-- AUCUN RESULTAT -->
+
+      @if (!loading() && logs().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+
+          <h3>Aucun log trouvé</h3>
+
+          <p>Aucun fichier ou aucune ligne ne correspond aux critères sélectionnés.</p>
+        </div>
+      } @else {
+        <!-- LOGS COMPLETS -->
+
+        <div class="logs-container">
+          @for (log of logs(); track trackLog($index, log)) {
+            <div class="log-line">
+              <span class="log-time">
+                {{ formatTimestamp(log.timestamp) }}
+              </span>
+
+              <span class="log-source">
+                {{ log.sourceName }}
+              </span>
+
+              <span class="log-application">
+                {{ log.application }}
+              </span>
+
+              <span class="log-level" [class]="getLevelClass(log.level)">
+                {{ log.level }}
+              </span>
+
+              <span class="log-message">
+                {{ log.message }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- SEPARATION VISUELLE -->
+    <!-- ===================================================== -->
+
+    @if (features().length > 0) {
+      <section class="features-section">
+        <!-- ================================================= -->
+        <!-- HEADER FEATURES -->
+        <!-- ================================================= -->
+
+        <div class="features-header">
+          <div>
+            <h2>Fonctionnalités détectées</h2>
+
+            <span>
+              {{ features().length }}
+              fonctionnalité(s)
+            </span>
+          </div>
+        </div>
+
+        <!-- ================================================= -->
+        <!-- FEATURES -->
+        <!-- ================================================= -->
+
+        <div class="features-container">
+          @for (feature of features(); track feature.id) {
+            <article class="feature-card">
+              <!-- FEATURE HEADER -->
+
+              <div class="feature-card-header">
+                <div>
+                  <h3>Authentification Session</h3>
+
+                  <div class="feature-type">
+                    Type :
+
+                    <strong>
+                      {{ feature.type }}
+                    </strong>
+                  </div>
+                </div>
+
+                <div class="feature-id">
+                  ID :
+
+                  {{ feature.id }}
+                </div>
+              </div>
+
+              <!-- LOGS DE LA FEATURE -->
+
+              <div class="feature-logs">
+                @for (log of feature.logs; track trackFeatureLog($index, log)) {
+                  <div class="log-line">
+                    <span class="log-time">
+                      {{ formatTimestamp(log.timestamp) }}
+                    </span>
+
+                    <span class="log-source">
+                      {{ log.sourceName }}
+                    </span>
+
+                    <span class="log-application">
+                      {{ log.application }}
+                    </span>
+
+                    <span class="log-level" [class]="getLevelClass(log.level)">
+                      {{ log.level }}
+                    </span>
+
+                    <span class="log-message">
+                      {{ log.message }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>
