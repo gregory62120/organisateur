@@ -400,7 +400,7 @@ export class LogsComponent {
         id: '/enrollment/DefaultEnrolment/',
         label: 'Appel /enrollment/DefaultEnrolment/',
         description: "Vérification de l'enrollment d'un mobile de l'utilisateur",
-        icon: 'api',
+        icon: 'arrow-left-right',
         status: contains('/enrollment/DefaultEnrolment/') ? 'success' : 'error',
       },
 

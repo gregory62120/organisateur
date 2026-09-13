@@ -74,9 +74,11 @@
 
       <circle cx="85" cy="260" r="27" class="node-icon-background" />
 
-      <text x="85" y="272" text-anchor="middle" class="material-symbols">
-        {{ source().icon }}
-      </text>
+      <foreignObject x="60" y="240" width="50" height="50">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="flow-icon">
+          <i [class]="'bi bi-' + source().icon"></i>
+        </div>
+      </foreignObject>
 
       <text x="125" y="250" class="node-title">
         {{ source().label }}
@@ -118,14 +120,16 @@
           class="destination-icon-background"
         />
 
-        <text
-          [attr.x]="destinationX + 45"
-          [attr.y]="route.points[route.points.length - 1].y + 13"
-          text-anchor="middle"
-          class="material-symbols destination-icon"
+        <foreignObject
+          [attr.x]="destinationX + 20"
+          [attr.y]="route.points[route.points.length - 1].y - 25"
+          width="50"
+          height="50"
         >
-          {{ route.destination.icon }}
-        </text>
+          <div xmlns="http://www.w3.org/1999/xhtml" class="flow-icon destination-icon">
+            <i [class]="'bi bi-' + route.destination.icon"></i>
+          </div>
+        </foreignObject>
 
         <text
           [attr.x]="destinationX + 82"
