@@ -17,8 +17,8 @@
     }
   ],
   "applications": [
-    "APP_A",
-    "APP_B",
+    "BICEI-API-serveur",
+    "BICEI-API-fwk",
     "APP_C",
     "APP_D"
   ]

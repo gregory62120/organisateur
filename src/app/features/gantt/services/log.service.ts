@@ -27,7 +27,12 @@ export class LogService {
 
     const results = await Promise.all(
       files.map((file) =>
-        this.readLogFile(file, source, application.split('-serveur')[0], options),
+        this.readLogFile(
+          file,
+          source,
+          application.split(application.indexOf('-serveur') !== -1 ? '-serveur' : '-fwk')[0],
+          options,
+        ),
       ),
     );
 

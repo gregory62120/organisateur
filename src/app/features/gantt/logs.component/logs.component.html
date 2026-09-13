@@ -286,6 +286,19 @@
                 </div>
               </div>
 
+              <div class="page">
+                <app-flow
+                  [source]="source()"
+                  [destinations]="feature.destinations"
+                  [width]="1400"
+                  [height]="520"
+                  containerWidth="100%"
+                  containerHeight="520px"
+                  [indicatorDuration]="1800"
+                  [animatedArrows]="true"
+                  [animatedIndicator]="true"
+                />
+              </div>
               <!-- LOGS DE LA FEATURE -->
 
               <details class="logs-section feature-logs-section">

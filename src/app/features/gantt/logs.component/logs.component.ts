@@ -7,6 +7,8 @@ import { LogService } from '../services/log.service';
 import { AppConfig, LogSource } from '../models/app-config.model';
 
 import { LogEntry, LogLevel } from '../models/log-entry.model';
+import { FlowDestination, FlowSource } from '../models/flow.models';
+import { FlowComponent } from '../flow/flow';
 
 interface SelectedSource {
   source: LogSource;
@@ -17,12 +19,13 @@ interface LogFeature {
   id: string;
   type: string;
   logs: LogEntry[];
+  destinations: FlowDestination[];
 }
 
 @Component({
   selector: 'app-logs',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FlowComponent],
   templateUrl: './logs.component.html',
   styleUrl: './logs.component.scss',
 })
@@ -85,6 +88,7 @@ export class LogsComponent {
 
     const featureMap = new Map<string, LogFeature>();
 
+    // Détection des features
     for (const log of allLogs) {
       const match = log.message.match(/Start Authentification Session with Type:\s*(.+)/i);
 
@@ -99,11 +103,12 @@ export class LogsComponent {
           id: log.requestId,
           type,
           logs: [],
+          destinations: [],
         });
       }
     }
 
-    // Maintenant on récupère TOUS les logs ayant un des IDs détectés
+    // Association de tous les logs à leur feature
     for (const log of allLogs) {
       if (!log.requestId) {
         continue;
@@ -118,7 +123,22 @@ export class LogsComponent {
       feature.logs.push(log);
     }
 
+    // Calcul du flow pour chaque feature
+    for (const feature of featureMap.values()) {
+      feature.destinations = this.buildFeatureDestinations(feature.logs);
+    }
+
     return Array.from(featureMap.values());
+  });
+
+  /**
+   * Source du flux.
+   */
+  readonly source = signal<FlowSource>({
+    id: 'source',
+    label: 'Source',
+    description: 'Envoi des données',
+    icon: 'send',
   });
 
   constructor() {
@@ -346,5 +366,51 @@ export class LogsComponent {
     const day = String(date.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
+  }
+
+  private buildFeatureDestinations(logs: LogEntry[]): FlowDestination[] {
+    const messages = logs.map((log) => log.message.toLowerCase());
+
+    const contains = (value: string): boolean =>
+      messages.some((message) => message.includes(value.toLowerCase()));
+
+    const containsSql = (sql: string, table: string): boolean =>
+      messages.some(
+        (message) => message.includes(sql.toLowerCase()) && message.includes(table.toLowerCase()),
+      );
+
+    return [
+      {
+        id: 'CICB_BEI_CRT',
+        label: 'Appel CICB_BEI_CRT',
+        description: 'Récupération information carte',
+        icon: 'database',
+        status: containsSql('select', 'CICB_BEI_CRT') ? 'success' : 'error',
+      },
+
+      {
+        id: 'REFERENTIEL_ENTREPRISE',
+        label: 'Appel REFERENTIEL_ENTREPRISE',
+        description: 'Récupération de la configuration de la période',
+        icon: 'database',
+        status: containsSql('select', 'REFERENTIEL_ENTREPRISE') ? 'success' : 'success',
+      },
+
+      {
+        id: '/enrollment/DefaultEnrolment/',
+        label: 'Appel /enrollment/DefaultEnrolment/',
+        description: "Vérification de l'enrollment d'un mobile de l'utilisateur",
+        icon: 'api',
+        status: contains('/enrollment/DefaultEnrolment/') ? 'success' : 'error',
+      },
+
+      {
+        id: 'CICB_BEI_3DS',
+        label: 'Sauvegarde CICB_BEI_3DS',
+        description: 'Sauvegarde des informations de la session 3DS',
+        icon: 'database',
+        status: containsSql('update', 'CICB_BEI_3DS') ? 'success' : 'error',
+      },
+    ];
   }
 }

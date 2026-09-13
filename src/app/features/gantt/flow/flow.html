@@ -105,7 +105,7 @@
         <rect
           [attr.x]="destinationX"
           [attr.y]="route.points[route.points.length - 1].y - 46"
-          width="300"
+          width="500"
           height="92"
           rx="14"
           [class]="statusClass(route.status)"
@@ -146,14 +146,14 @@
         }
 
         <circle
-          [attr.cx]="destinationX + 275"
+          [attr.cx]="destinationX + 475"
           [attr.cy]="route.points[route.points.length - 1].y"
           r="14"
           class="status-indicator"
         />
 
         <text
-          [attr.x]="destinationX + 275"
+          [attr.x]="destinationX + 475"
           [attr.y]="route.points[route.points.length - 1].y + 5"
           text-anchor="middle"
           class="material-symbols status-icon"
