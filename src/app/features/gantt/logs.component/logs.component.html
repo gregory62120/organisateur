@@ -196,31 +196,43 @@
       } @else {
         <!-- LOGS COMPLETS -->
 
-        <div class="logs-container">
-          @for (log of logs(); track trackLog($index, log)) {
-            <div class="log-line">
-              <span class="log-time">
-                {{ formatTimestamp(log.timestamp) }}
-              </span>
+        <details class="logs-section">
+          <summary class="logs-section-header">
+            <div>
+              <h3>Logs complets</h3>
 
-              <span class="log-source">
-                {{ log.sourceName }}
-              </span>
-
-              <span class="log-application">
-                {{ log.application }}
-              </span>
-
-              <span class="log-level" [class]="getLevelClass(log.level)">
-                {{ log.level }}
-              </span>
-
-              <span class="log-message">
-                {{ log.message }}
-              </span>
+              <span> {{ logCount() }} ligne(s) </span>
             </div>
-          }
-        </div>
+
+            <span class="logs-toggle">⌄</span>
+          </summary>
+
+          <div class="logs-container">
+            @for (log of logs(); track trackLog($index, log)) {
+              <div class="log-line">
+                <span class="log-time">
+                  {{ formatTimestamp(log.timestamp) }}
+                </span>
+
+                <span class="log-source">
+                  {{ log.sourceName }}
+                </span>
+
+                <span class="log-application">
+                  {{ log.application }}
+                </span>
+
+                <span class="log-level" [class]="getLevelClass(log.level)">
+                  {{ log.level }}
+                </span>
+
+                <span class="log-message">
+                  {{ log.message }}
+                </span>
+              </div>
+            }
+          </div>
+        </details>
       }
     </section>
 
@@ -276,31 +288,43 @@
 
               <!-- LOGS DE LA FEATURE -->
 
-              <div class="feature-logs">
-                @for (log of feature.logs; track trackFeatureLog($index, log)) {
-                  <div class="log-line">
-                    <span class="log-time">
-                      {{ formatTimestamp(log.timestamp) }}
-                    </span>
+              <details class="logs-section feature-logs-section">
+                <summary class="logs-section-header">
+                  <div>
+                    <h4>Logs de la fonctionnalité</h4>
 
-                    <span class="log-source">
-                      {{ log.sourceName }}
-                    </span>
-
-                    <span class="log-application">
-                      {{ log.application }}
-                    </span>
-
-                    <span class="log-level" [class]="getLevelClass(log.level)">
-                      {{ log.level }}
-                    </span>
-
-                    <span class="log-message">
-                      {{ log.message }}
-                    </span>
+                    <span> {{ feature.logs.length }} ligne(s) </span>
                   </div>
-                }
-              </div>
+
+                  <span class="logs-toggle">⌄</span>
+                </summary>
+
+                <div class="logs-container">
+                  @for (log of feature.logs; track trackFeatureLog($index, log)) {
+                    <div class="log-line">
+                      <span class="log-time">
+                        {{ formatTimestamp(log.timestamp) }}
+                      </span>
+
+                      <span class="log-source">
+                        {{ log.sourceName }}
+                      </span>
+
+                      <span class="log-application">
+                        {{ log.application }}
+                      </span>
+
+                      <span class="log-level" [class]="getLevelClass(log.level)">
+                        {{ log.level }}
+                      </span>
+
+                      <span class="log-message">
+                        {{ log.message }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </details>
             </article>
           }
         </div>
