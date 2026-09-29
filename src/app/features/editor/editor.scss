@@ -110,13 +110,6 @@ body {
   flex-direction: column;
 }
 
-.editor-view > angular-tiptap-editor {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
 /* Highlight when fillContainer is activated */
 .editor-view.fill-container-active {
   position: relative;
