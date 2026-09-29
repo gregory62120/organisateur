@@ -110,6 +110,11 @@ body {
   flex-direction: column;
 }
 
+.fill-container {
+  display: block;
+  height: 75vh;
+}
+
 /* Highlight when fillContainer is activated */
 .editor-view.fill-container-active {
   position: relative;
