@@ -1,0 +1,588 @@
+/* =========================================================
+   EDITOR
+   ========================================================= */
+
+.ate-editor {
+  position: relative;
+  overflow: visible;
+  border: var(--ate-border-width) solid var(--ate-border-color);
+  border-radius: var(--ate-border-radius);
+  background: var(--ate-background);
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: var(--ate-focus-color);
+  }
+}
+
+/* =========================================================
+   MODES
+   ========================================================= */
+
+:host(.floating-toolbar) .ate-editor {
+  overflow: visible;
+}
+
+:host(.fill-container) {
+  .ate-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .ate-content-wrapper,
+  .ate-content {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .ate-content {
+    overflow-y: auto;
+  }
+}
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.ate-content-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  .ate-content {
+    flex: 1;
+  }
+}
+
+.ate-content {
+  position: relative;
+  min-height: var(--editor-min-height, 200px);
+  height: var(--editor-height, auto);
+  max-height: var(--editor-max-height, none);
+  overflow-y: var(--editor-overflow, visible);
+  outline: none;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--ate-scrollbar-thumb) var(--ate-scrollbar-track);
+
+  &::-webkit-scrollbar {
+    width: var(--ate-scrollbar-width);
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--ate-scrollbar-track);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--ate-scrollbar-thumb);
+    border: 3px solid transparent;
+    border-radius: 10px;
+    background-clip: content-box;
+
+    &:hover {
+      background: var(--ate-scrollbar-thumb-hover);
+      background-clip: content-box;
+    }
+  }
+
+  &.drag-over {
+    border: 2px dashed var(--ate-drag-border-color);
+    background: var(--ate-drag-background);
+  }
+}
+
+/* =========================================================
+   DISABLED / READONLY
+   ========================================================= */
+
+:host(.is-disabled) .ate-content {
+  cursor: not-allowed;
+  opacity: 0.7;
+  user-select: none;
+  pointer-events: none;
+  background-color: var(--ate-surface-tertiary);
+}
+
+:host(.is-readonly) {
+  .ate-content {
+    cursor: default;
+    user-select: text;
+  }
+
+  .ate-content ::ng-deep .ate-link {
+    cursor: pointer;
+    pointer-events: auto;
+  }
+}
+
+/* =========================================================
+   CHARACTER COUNT
+   ========================================================= */
+
+.character-count {
+  padding: 6px 8px;
+  border-top: 1px solid var(--ate-counter-border-color);
+  border-bottom-left-radius: calc(var(--ate-border-radius) - var(--ate-border-width));
+  border-bottom-right-radius: calc(var(--ate-border-radius) - var(--ate-border-width));
+
+  background: var(--ate-counter-background);
+  color: var(--ate-counter-color);
+  font-size: 12px;
+  text-align: right;
+  transition: color 0.2s ease;
+
+  &.limit-reached {
+    color: var(--ate-error-color, #ef4444);
+    font-weight: 600;
+  }
+}
+
+/* =========================================================
+   BLOCK GUTTER
+   ========================================================= */
+
+:host.ate-blocks-inside {
+  --ate-content-gutter: 54px;
+}
+
+@media (max-width: 768px) {
+  :host.ate-blocks-inside {
+    --ate-content-gutter: 0px;
+  }
+
+  ate-block-controls {
+    display: none !important;
+  }
+}
+
+/* =========================================================
+   PROSEMIRROR
+   ========================================================= */
+
+:host ::ng-deep .ProseMirror {
+  min-height: 100%;
+  height: 100%;
+  padding-inline: calc(var(--ate-content-padding-inline) + var(--ate-content-gutter));
+  padding-block: var(--ate-content-padding-block);
+
+  outline: none;
+  color: var(--ate-text-color);
+  line-height: var(--ate-line-height);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+
+  &::selection,
+  ::selection {
+    background-color: var(--ate-selection-bg);
+    color: inherit;
+  }
+
+  &::-moz-selection,
+  ::-moz-selection {
+    background-color: var(--ate-selection-bg);
+    color: inherit;
+  }
+
+  /* Titres */
+  h1,
+  h2,
+  h3 {
+    font-weight: bold;
+  }
+
+  h1 {
+    margin: 0 0 0.5em;
+    font-size: 2em;
+  }
+
+  h2 {
+    margin: 1em 0 0.5em;
+    font-size: 1.5em;
+  }
+
+  h3 {
+    margin: 1em 0 0.5em;
+    font-size: 1.25em;
+  }
+
+  /* Paragraphes / listes */
+  p {
+    margin: 0.5em 0;
+  }
+
+  ul,
+  ol {
+    margin: 0.5em 0;
+    padding-left: 2em;
+  }
+
+  /* Citations */
+  blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 4px solid var(--ate-blockquote-border-color);
+    border-radius: 0 4px 4px 0;
+    background: var(--ate-blockquote-background);
+  }
+
+  /* Code inline */
+  code {
+    padding: 0.15em 0.4em;
+    border: 1px solid var(--ate-code-border-color);
+    border-radius: 4px;
+
+    background: var(--ate-code-background);
+    color: var(--ate-code-color);
+
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 0.85em;
+    font-weight: 500;
+  }
+
+  /* Bloc de code */
+  pre {
+    margin: 1em 0;
+    padding: 1em;
+    overflow-x: auto;
+
+    border: 1px solid var(--ate-code-block-border-color);
+    border-radius: var(--ate-border-radius);
+
+    background: var(--ate-code-block-background);
+    color: var(--ate-code-block-color);
+
+    code {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+    }
+  }
+
+  /* Placeholder */
+  p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--ate-placeholder-color);
+    pointer-events: none;
+  }
+
+  /* =====================================================
+     READONLY
+     ===================================================== */
+
+  &[contenteditable='false'] {
+    img,
+    a {
+      cursor: pointer;
+    }
+
+    img:hover {
+      transform: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    img.ProseMirror-selectednode {
+      outline: none;
+    }
+  }
+
+  /* =====================================================
+     IMAGES
+     ===================================================== */
+
+  img {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: var(--ate-image-border-radius);
+
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--ate-border-color);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    &.ProseMirror-selectednode {
+      border-color: var(--ate-image-selected-color);
+    }
+  }
+
+  .resizable-image-container.selected img {
+    border-color: var(--ate-image-selected-color);
+  }
+
+  /* =====================================================
+     ALIGNMENT
+     ===================================================== */
+
+  [data-text-align='center'],
+  [data-align='center'] {
+    text-align: center;
+  }
+
+  [data-text-align='right'],
+  [data-align='right'] {
+    text-align: right;
+  }
+
+  [data-text-align='left'],
+  [data-align='left'] {
+    text-align: left;
+  }
+
+  /* =====================================================
+     RESIZABLE IMAGES
+     ===================================================== */
+
+  .resizable-image-wrapper {
+    display: block;
+    width: 100%;
+    margin: 0.5em 0;
+  }
+
+  .resizable-image-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .resize-controls {
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .resize-handle {
+    position: absolute;
+    z-index: 1001;
+
+    width: 0.35rem;
+    height: 2rem;
+
+    border: 2px solid var(--ate-surface);
+    border-radius: var(--ate-border-radius);
+
+    background: var(--ate-primary);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+
+    cursor: pointer;
+    pointer-events: all;
+    transition: all 0.15s ease;
+
+    &:hover,
+    &:active {
+      background: var(--ate-primary-hover);
+    }
+  }
+
+  .resize-handle-w,
+  .resize-handle-e {
+    top: 50%;
+    transform: translateY(-50%);
+
+    &:hover {
+      background: var(--ate-primary-hover);
+    }
+
+    &:active {
+      transform: translateY(-50%) scale(0.9);
+    }
+  }
+
+  .resize-handle-w {
+    left: 0.35rem;
+    cursor: w-resize;
+  }
+
+  .resize-handle-e {
+    right: 0.35rem;
+    cursor: e-resize;
+  }
+
+  .image-size-info {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding: 2px 6px;
+    border-radius: 3px;
+
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 11px;
+    white-space: nowrap;
+
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .resizable-image-container:hover .image-size-info {
+    opacity: 1;
+  }
+
+  /* Affichage des contrôles uniquement en mode éditable */
+  :host-context(.dummy) {
+    /* Aucun style */
+  }
+}
+
+/* Sélecteurs qui doivent cibler le host */
+:host:not(.is-readonly):not(.is-disabled)
+  ::ng-deep
+  .resizable-image-container:hover
+  .resize-controls,
+:host:not(.is-readonly):not(.is-disabled) ::ng-deep body.resizing .resize-controls {
+  opacity: 1;
+}
+
+/* Redimensionnement en cours */
+:host ::ng-deep body.resizing {
+  user-select: none;
+  cursor: crosshair;
+
+  .ProseMirror {
+    pointer-events: none;
+
+    .resizable-image-container {
+      pointer-events: none;
+    }
+  }
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+:host ::ng-deep .ProseMirror {
+  table {
+    width: 100%;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    border-radius: 8px;
+    overflow: hidden;
+
+    td,
+    th {
+      position: relative;
+      min-width: 1em;
+      padding: 8px 12px;
+
+      border: 0;
+      border-right: 1px solid var(--ate-table-border-color);
+      border-bottom: 1px solid var(--ate-table-border-color);
+
+      box-sizing: border-box;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    td {
+      background: var(--ate-table-cell-background);
+    }
+
+    th {
+      background: var(--ate-table-header-background);
+      color: var(--ate-table-header-color);
+      font-weight: 600;
+    }
+
+    td:first-child,
+    th:first-child {
+      border-left: 1px solid var(--ate-table-border-color);
+    }
+
+    tr:first-child {
+      td,
+      th {
+        border-top: 1px solid var(--ate-table-border-color);
+      }
+
+      th:first-child {
+        border-top-left-radius: 8px;
+      }
+
+      th:last-child {
+        border-top-right-radius: 8px;
+      }
+    }
+
+    tr:last-child {
+      td:first-child {
+        border-bottom-left-radius: 8px;
+      }
+
+      td:last-child {
+        border-bottom-right-radius: 8px;
+      }
+    }
+
+    tbody tr:hover td {
+      background-color: var(--ate-table-row-hover-background);
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .selectedCell::after {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+
+      content: '';
+      background: var(--ate-table-cell-selected-background);
+      pointer-events: none;
+    }
+
+    .column-resize-handle {
+      position: absolute;
+      top: 0;
+      right: -2px;
+      bottom: 0;
+
+      width: 4px;
+
+      background-color: var(--ate-table-resize-handle-color);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    &:hover .column-resize-handle {
+      opacity: 1;
+    }
+
+    .column-resize-handle:hover {
+      background-color: var(--ate-focus-color);
+    }
+  }
+
+  /* Wrapper de table généré par ProseMirror */
+  .tableWrapper {
+    margin: 1em 0;
+    overflow-x: auto;
+    border-radius: 8px;
+
+    table {
+      min-width: 600px;
+      margin: 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  }
+}
