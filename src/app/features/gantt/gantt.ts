@@ -1,4 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
+import { FlowComponent } from './flow/flow';
+import { FlowDestination, FlowSource } from './models/flow.models';
+import { LogsComponent } from "./logs.component/logs.component";
 
 @Component({
   selector: 'app-gantt',
@@ -6,6 +9,7 @@ import { Component } from '@angular/core';
   standalone: true,
 
   templateUrl: './gantt.html',
+  imports: [FlowComponent, LogsComponent],
 })
 export class GanttComponent {
   tasks = [
@@ -37,4 +41,43 @@ export class GanttComponent {
       dependencies: ['1'],
     },
   ];
+
+  /**
+   * Source du flux.
+   */
+  readonly source = signal<FlowSource>({
+    id: 'source',
+    label: 'Source',
+    description: 'Envoi des données',
+    icon: 'send',
+  });
+
+  /**
+   * Destinations du flux.
+   *
+   * La première destination en erreur arrête le parcours.
+   */
+  readonly destinations = signal<FlowDestination[]>([
+    {
+      id: 'api',
+      label: 'API REST',
+      description: 'Service externe',
+      icon: 'database',
+      status: 'success',
+    },
+    {
+      id: 'database',
+      label: 'Base de données',
+      description: 'Stockage des données',
+      icon: 'cloud',
+      status: 'success',
+    },
+    {
+      id: 'notification',
+      label: 'Notifications',
+      description: "Envoi d'e-mails",
+      icon: 'mail',
+      status: 'error',
+    },
+  ]);
 }
