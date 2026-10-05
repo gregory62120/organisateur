@@ -30,6 +30,7 @@
             (mouseleave)="onEditorHover(false)"
           >
             <angular-tiptap-editor
+              class="fill-container"
               [content]="content()"
               [config]="editorConfig()"
               (contentChange)="onContentChange($event)"
