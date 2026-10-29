@@ -1,11 +1,44 @@
-<mat-sidenav-container>
-  <mat-sidenav opened mode="side">
-    <app-sidebar> </app-sidebar>
-  </mat-sidenav>
+<div class="shell">
+  <app-sidebar class="shell-sidebar" />
 
-  <mat-sidenav-content>
-    <div class="content">
-      <router-outlet> </router-outlet>
-    </div>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  <div class="shell-main">
+    <header class="topbar">
+      <div class="project">
+        <span class="material-symbols-outlined">folder_open</span>
+        @if (storage.root(); as root) {
+          <span class="project-name">{{ root.name }}</span>
+        } @else {
+          <span class="project-name muted">Aucun projet ouvert</span>
+        }
+      </div>
+
+      <div class="topbar-actions">
+        @if (taskService.error(); as error) {
+          <span class="status status-error" [title]="error">
+            <span class="material-symbols-outlined">error</span>
+            Erreur d'enregistrement
+          </span>
+        } @else if (taskService.saving()) {
+          <span class="status">
+            <span class="material-symbols-outlined spin">sync</span>
+            Enregistrement…
+          </span>
+        } @else if (storage.isOpen()) {
+          <span class="status status-ok">
+            <span class="material-symbols-outlined">cloud_done</span>
+            Enregistré
+          </span>
+        }
+
+        <button type="button" class="btn-primary" (click)="openProject()">
+          <span class="material-symbols-outlined">create_new_folder</span>
+          {{ storage.isOpen() ? 'Changer de projet' : 'Ouvrir un projet' }}
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

@@ -39,6 +39,8 @@ export interface Task {
 
   assignedTo?: string;
 
+  tags?: string[];
+
   checklist: ChecklistItem[];
 
   comments: Comment[];

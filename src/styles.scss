@@ -19,7 +19,30 @@ html {
   );
 }
 
+:root {
+  --tf-navy: #0b1f4b;
+  --tf-navy-soft: #13296a;
+  --tf-bg: #f5f8ff;
+  --tf-surface: #ffffff;
+  --tf-border: #e6ecf5;
+  --tf-text: #0f1f3d;
+  --tf-muted: #6b7a99;
+  --tf-primary: #2f6bff;
+  --tf-primary-soft: #eaf0ff;
+  --tf-green: #19b36b;
+  --tf-green-soft: #e6f8ef;
+  --tf-orange: #ff9f1a;
+  --tf-orange-soft: #fff4e0;
+  --tf-red: #ef4452;
+  --tf-red-soft: #ffeaec;
+  --tf-violet: #8b5cf6;
+  --tf-violet-soft: #f1ebff;
+  --tf-radius: 14px;
+  --tf-shadow: 0 1px 2px rgba(15, 31, 61, 0.04), 0 4px 14px rgba(15, 31, 61, 0.05);
+}
+
 body {
+  font-family: 'Inter', 'Roboto', sans-serif;
   // Default the application to a light color theme. This can be changed to
   // `dark` to enable the dark color theme, or to `light dark` to defer to the
   // user's system settings.

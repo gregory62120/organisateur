@@ -1,38 +1,48 @@
-<div class="task">
-  <h3>
-    {{ task.title }}
-  </h3>
+<article class="task" tabindex="0" (click)="opened.emit()" (keydown.enter)="opened.emit()">
+  <header>
+    <h3>{{ task().title }}</h3>
+    <button type="button" class="delete" title="Supprimer la tâche" (click)="delete($event)">
+      <span class="material-symbols-outlined">delete</span>
+    </button>
+  </header>
 
-  <div class="actions">
-    <button class="btn-delete" title="Supprimer" (click)="delete()">🗑️</button>
-  </div>
-</div>
+  @if (task().tags?.length) {
+    <ul class="tags">
+      @for (tag of task().tags; track tag) {
+        <li [style.background]="tone(tag).bg" [style.color]="tone(tag).fg">{{ tag }}</li>
+      }
+    </ul>
+  }
 
-<!-- @if (!editing) {
-  <div class="task">
-    <h3>
-      {{ task.title }}
-    </h3>
+  <footer>
+    <span class="priority" [attr.data-priority]="task().priority">
+      <span class="material-symbols-outlined">flag</span>
+      {{ priorityLabel() }}
+    </span>
 
-    <p>
-      {{ task.description }}
-    </p>
+    @if (dueLabel()) {
+      <span class="due" [class.overdue]="overdue()">
+        <span class="material-symbols-outlined">event</span>
+        {{ dueLabel() }}
+      </span>
+    }
 
-    <div class="actions">
-      <button class="btn-edit" (click)="edit()">✏️</button>
-      <button class="btn-delete" title="Supprimer" (click)="delete()">🗑️</button>
-    </div>
-  </div>
-} @else {
-  <div class="task edit">
-    <input [(ngModel)]="editedTask.title" />
+    @if (task().checklist.length) {
+      <span class="checklist">
+        <span class="material-symbols-outlined">checklist</span>
+        {{ checklistDone() }}/{{ task().checklist.length }}
+      </span>
+    }
 
-    <textarea [(ngModel)]="editedTask.description"> </textarea>
+    @if (task().comments.length) {
+      <span class="checklist">
+        <span class="material-symbols-outlined">chat_bubble</span>
+        {{ task().comments.length }}
+      </span>
+    }
 
-    <div class="actions">
-      <button class="btn-save" title="Sauvegarder" (click)="save()">💾</button>
-
-      <button class="btn-cancel" title="Annuler" (click)="cancel()">❌</button>
-    </div>
-  </div>
-} -->
+    @if (assigneeInitials()) {
+      <span class="avatar" [style.background]="avatarBg()" [title]="task().assignedTo">{{ assigneeInitials() }}</span>
+    }
+  </footer>
+</article>

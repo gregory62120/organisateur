@@ -1,10 +1,89 @@
-<h2>
-  <input [(ngModel)]="task.title" />
-</h2>
+<header class="head">
+  <input
+    class="title"
+    aria-label="Titre de la tâche"
+    placeholder="Titre de la tâche"
+    [value]="title()"
+    (input)="title.set($any($event.target).value)"
+  />
+  <button type="button" class="icon-btn" title="Fermer" (click)="close()">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+</header>
 
-<app-editor [content]="content()" (contentChange)="updateContent($event)"> </app-editor>
+<div class="fields">
+  <label>
+    <span>Statut</span>
+    <select [value]="status()" (change)="status.set($any($event.target).value)">
+      @for (s of statuses; track s) {
+        <option [value]="s" [selected]="s === status()">{{ statusLabels[s] }}</option>
+      }
+    </select>
+  </label>
 
-<div class="actions">
-  <button class="btn-cancel" title="Annuler" (click)="close()">❌</button>
-  <button class="btn-save" title="Sauvegarder" (click)="save()">💾</button>
+  <label>
+    <span>Priorité</span>
+    <select [value]="priority()" (change)="priority.set($any($event.target).value)">
+      @for (p of priorities; track p) {
+        <option [value]="p" [selected]="p === priority()">{{ priorityLabels[p] }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    <span>Échéance</span>
+    <input type="date" [value]="dueDate()" (input)="dueDate.set($any($event.target).value)" />
+  </label>
+
+  <label>
+    <span>Responsable</span>
+    <input
+      type="text"
+      placeholder="Nom du responsable"
+      [value]="assignedTo()"
+      (input)="assignedTo.set($any($event.target).value)"
+    />
+  </label>
 </div>
+
+<div class="tags-field">
+  <span class="label">Étiquettes</span>
+  <div class="tags">
+    @for (tag of tags(); track tag) {
+      <span class="tag">
+        {{ tag }}
+        <button type="button" [attr.aria-label]="'Retirer ' + tag" (click)="removeTag(tag)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </span>
+    }
+    <input
+      type="text"
+      placeholder="Ajouter une étiquette (Entrée)"
+      [value]="newTag()"
+      (input)="newTag.set($any($event.target).value)"
+      (keydown.enter)="$event.preventDefault(); addTag()"
+    />
+  </div>
+</div>
+
+<div class="description">
+  <span class="label">Description</span>
+  <div class="editor">
+    <app-editor [content]="content()" (contentChange)="updateContent($event)" />
+  </div>
+</div>
+
+<footer class="actions">
+  @if (!isNew) {
+    <button type="button" class="btn-danger" (click)="remove()">
+      <span class="material-symbols-outlined">delete</span>
+      Supprimer
+    </button>
+  }
+  <span class="spacer"></span>
+  <button type="button" class="btn-secondary" (click)="close()">Annuler</button>
+  <button type="button" class="btn-primary" (click)="save()">
+    {{ isNew ? 'Créer la tâche' : 'Enregistrer' }}
+  </button>
+</footer>

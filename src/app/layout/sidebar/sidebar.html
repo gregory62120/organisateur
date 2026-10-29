@@ -1,34 +1,31 @@
-<h2 class="sidebar-title">Gestion Projet</h2>
+<div class="brand">
+  <span class="brand-logo"><span class="material-symbols-outlined">check</span></span>
+  <span class="brand-name">TaskFlow</span>
+</div>
 
-<mat-nav-list>
+<nav class="menu">
   @for (item of menu; track item.url) {
-    <a mat-list-item [routerLink]="item.url">
-      {{ item.label }}
+    <a [routerLink]="item.url" routerLinkActive="active">
+      <span class="material-symbols-outlined">{{ item.icon }}</span>
+      <span class="label">{{ item.label }}</span>
     </a>
   }
-</mat-nav-list>
+</nav>
 
 <div class="sync-actions">
-  <a mat-list-item href="#" (click)="$event.preventDefault(); synchronize()" [disabled]="syncing()">
+  <span class="section">GitHub</span>
+
+  <a href="#" (click)="$event.preventDefault(); synchronize()" [class.disabled]="syncing()">
     <span class="material-symbols-outlined" [class.loading]="syncing()">
       {{ syncing() ? 'sync_problem' : 'cloud_upload' }}
     </span>
-    <span>
-      {{ syncing() ? 'Synchronisation...' : 'Synchroniser GitHub Sortant' }}
-    </span>
+    <span class="label">{{ syncing() ? 'Synchronisation…' : 'Synchroniser (sortant)' }}</span>
   </a>
 
-  <a
-    mat-list-item
-    href="#"
-    (click)="$event.preventDefault(); pullFromGithub()"
-    [disabled]="pulling()"
-  >
+  <a href="#" (click)="$event.preventDefault(); pullFromGithub()" [class.disabled]="pulling()">
     <span class="material-symbols-outlined" [class.loading]="pulling()">
       {{ pulling() ? 'sync_problem' : 'cloud_download' }}
     </span>
-    <span>
-      {{ pulling() ? 'Synchronisation...' : 'Synchroniser GitHub Entrant' }}
-    </span>
+    <span class="label">{{ pulling() ? 'Synchronisation…' : 'Synchroniser (entrant)' }}</span>
   </a>
 </div>
