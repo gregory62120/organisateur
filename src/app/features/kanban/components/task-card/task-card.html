@@ -14,6 +14,51 @@
     </ul>
   }
 
+  @if (task().checklist.length) {
+    <section class="subtasks">
+      <button
+        type="button"
+        class="subtasks-toggle"
+        [attr.aria-expanded]="subtasksOpen()"
+        (click)="toggleSubtasks($event)"
+      >
+        <span class="material-symbols-outlined">
+          {{ subtasksOpen() ? 'expand_more' : 'chevron_right' }}
+        </span>
+        Sous-tâches
+        <span class="subtasks-count">{{ checklistDone() }}/{{ task().checklist.length }}</span>
+        <span class="subtasks-bar"><span [style.width.%]="checklistProgress()"></span></span>
+      </button>
+
+      @if (subtasksOpen()) {
+        <ul>
+          @for (item of task().checklist; track item.id) {
+            <li [class.done]="item.completed">
+              <input
+                type="checkbox"
+                [checked]="item.completed"
+                [attr.aria-label]="'Terminer ' + item.label"
+                (click)="$event.stopPropagation()"
+                (change)="toggleSubtask($event, item.id)"
+              />
+              <button
+                type="button"
+                class="subtask-open"
+                title="Modifier la sous-tâche"
+                (click)="openSubtask($event, item.id)"
+              >
+                {{ item.label }}
+              </button>
+              @if (item.dueDate) {
+                <span class="subtask-due">{{ dueShort(item.dueDate) }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
   <footer>
     <span class="priority" [attr.data-priority]="task().priority">
       <span class="material-symbols-outlined">flag</span>
@@ -42,7 +87,9 @@
     }
 
     @if (assigneeInitials()) {
-      <span class="avatar" [style.background]="avatarBg()" [title]="task().assignedTo">{{ assigneeInitials() }}</span>
+      <span class="avatar" [style.background]="avatarBg()" [title]="task().assignedTo">{{
+        assigneeInitials()
+      }}</span>
     }
   </footer>
 </article>

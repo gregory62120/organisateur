@@ -14,6 +14,10 @@ import {
 import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
 import { TaskCardComponent } from './components/task-card/task-card';
+import {
+  SubtaskDialogComponent,
+  SubtaskDialogData,
+} from './components/subtask-dialog/subtask-dialog';
 import { TaskDialogComponent, TaskDialogData } from './components/task-dialog/task-dialog';
 
 interface Column {
@@ -116,7 +120,12 @@ export class KanbanComponent {
 
   readonly hasFilter = computed(
     () =>
-      !!(this.search().trim() || this.priorityFilter() || this.assigneeFilter() || this.tagFilter()),
+      !!(
+        this.search().trim() ||
+        this.priorityFilter() ||
+        this.assigneeFilter() ||
+        this.tagFilter()
+      ),
   );
 
   drop(event: CdkDragDrop<Task[]>, status: TaskStatus) {
@@ -168,6 +177,22 @@ export class KanbanComponent {
       panelClass: 'tf-dialog-panel',
       maxWidth: '96vw',
       maxHeight: '94vh',
+    });
+  }
+
+  openSubtask(task: Task, subtaskId: string) {
+    this.dialog.open<unknown, SubtaskDialogData>(SubtaskDialogComponent, {
+      data: { task, subtaskId },
+      panelClass: 'tf-dialog-panel',
+      maxWidth: '96vw',
+      maxHeight: '94vh',
+    });
+  }
+
+  toggleSubtask(task: Task, id: string) {
+    this.taskService.update({
+      ...task,
+      checklist: task.checklist.map((i) => (i.id === id ? { ...i, completed: !i.completed } : i)),
     });
   }
 

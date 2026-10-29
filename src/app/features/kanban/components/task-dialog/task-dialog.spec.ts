@@ -37,7 +37,10 @@ describe('TaskDialogComponent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('confirm', vi.fn(() => true));
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true),
+    );
   });
 
   afterEach(() => vi.unstubAllGlobals());
@@ -131,12 +134,76 @@ describe('TaskDialogComponent', () => {
   });
 
   it('ne supprime pas si la confirmation est refusée', () => {
-    vi.stubGlobal('confirm', vi.fn(() => false));
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => false),
+    );
     const dialog = create({ task });
 
     dialog.remove();
 
     expect(taskService.delete).not.toHaveBeenCalled();
     expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  describe('sous-tâches', () => {
+    it('ajoute, coche, renomme et supprime une sous-tâche', () => {
+      const dialog = create({ task });
+
+      dialog.newSubtask.set('  Écrire les tests ');
+      dialog.addSubtask();
+      expect(dialog.checklist().map((i) => i.label)).toEqual(['Écrire les tests']);
+      expect(dialog.newSubtask()).toBe('');
+
+      const id = dialog.checklist()[0].id;
+      dialog.toggleSubtask(id);
+      expect(dialog.subtasksDone()).toBe(1);
+      expect(dialog.subtasksProgress()).toBe(100);
+
+      dialog.renameSubtask(id, 'Relire');
+      expect(dialog.checklist()[0].label).toBe('Relire');
+
+      dialog.removeSubtask(id);
+      expect(dialog.checklist()).toEqual([]);
+      expect(dialog.subtasksProgress()).toBe(0);
+    });
+
+    it('ignore une sous-tâche vide', () => {
+      const dialog = create({ task });
+      dialog.newSubtask.set('   ');
+      dialog.addSubtask();
+      expect(dialog.checklist()).toEqual([]);
+    });
+
+    it('enregistre la checklist, y compris la saisie en cours, sans les libellés vides', () => {
+      const dialog = create({
+        task: {
+          ...task,
+          checklist: [
+            { id: '1', label: 'Déjà là', completed: true },
+            { id: '2', label: 'À vider', completed: false },
+          ],
+        },
+      });
+      dialog.renameSubtask('2', '  ');
+      dialog.newSubtask.set('Dernière');
+
+      dialog.save();
+
+      const saved = taskService.update.mock.calls[0][0] as Task;
+      expect(saved.checklist.map((i) => [i.label, i.completed])).toEqual([
+        ['Déjà là', true],
+        ['Dernière', false],
+      ]);
+    });
+
+    it('ne modifie pas la checklist de la tâche d’origine', () => {
+      const original = [{ id: '1', label: 'a', completed: false }];
+      const dialog = create({ task: { ...task, checklist: original } });
+
+      dialog.toggleSubtask('1');
+
+      expect(original[0].completed).toBe(false);
+    });
   });
 });

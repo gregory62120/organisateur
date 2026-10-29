@@ -96,4 +96,67 @@ describe('TaskCardComponent', () => {
     expect(removed).toHaveBeenCalledTimes(1);
     expect(opened).not.toHaveBeenCalled();
   });
+
+  describe('sous-tâches', () => {
+    it('liste les sous-tâches avec leur état et la progression', async () => {
+      await render();
+
+      const items = [...el.querySelectorAll<HTMLLIElement>('.subtasks li')];
+      expect(items).toHaveLength(2);
+      expect(items[0].classList.contains('done')).toBe(true);
+      expect(items[1].classList.contains('done')).toBe(false);
+      expect(el.querySelector('.subtasks-count')?.textContent).toBe('1/2');
+      expect(el.querySelector<HTMLElement>('.subtasks-bar span')!.style.width).toBe('50%');
+    });
+
+    it('n’affiche rien sans sous-tâche', async () => {
+      await render({ ...baseTask, checklist: [] });
+
+      expect(el.querySelector('.subtasks')).toBeNull();
+    });
+
+    it('émet l’identifiant coché sans ouvrir la carte', async () => {
+      await render();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.subtaskToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      el.querySelectorAll<HTMLInputElement>('.subtasks input')[1].click();
+
+      expect(toggled).toHaveBeenCalledWith('b');
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('émet l’identifiant au clic sur le libellé, sans ouvrir la carte ni cocher', async () => {
+      await render();
+      const subtaskOpened = vi.fn();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.subtaskOpened.subscribe(subtaskOpened);
+      fixture.componentInstance.subtaskToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      el.querySelectorAll<HTMLElement>('.subtask-open')[1].click();
+
+      expect(subtaskOpened).toHaveBeenCalledWith('b');
+      expect(toggled).not.toHaveBeenCalled();
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('se replie et se déplie sans ouvrir la carte', async () => {
+      await render();
+      const opened = vi.fn();
+      fixture.componentInstance.opened.subscribe(opened);
+
+      el.querySelector<HTMLElement>('.subtasks-toggle')!.click();
+      await fixture.whenStable();
+      expect(el.querySelectorAll('.subtasks li')).toHaveLength(0);
+
+      el.querySelector<HTMLElement>('.subtasks-toggle')!.click();
+      await fixture.whenStable();
+      expect(el.querySelectorAll('.subtasks li')).toHaveLength(2);
+      expect(opened).not.toHaveBeenCalled();
+    });
+  });
 });

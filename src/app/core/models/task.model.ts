@@ -6,6 +6,12 @@ export interface ChecklistItem {
   label: string;
 
   completed: boolean;
+
+  description?: string;
+
+  assignedTo?: string;
+
+  dueDate?: string;
 }
 
 export interface Comment {

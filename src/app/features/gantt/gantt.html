@@ -1,13 +1,175 @@
-<h1>Planning</h1>
+<header class="page-head">
+  <div>
+    <h1>Planning</h1>
+    <p class="subtitle">
+      Diagramme de Gantt
+      @if (storage.root(); as root) {
+        - {{ root.name }}
+      }
+    </p>
+  </div>
+</header>
 
-@for (task of tasks; track task.id) {
-  <div class="line">
-    <div class="name">
-      {{ task.title }}
+@if (!storage.isOpen()) {
+  <section class="empty-state">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h2>Aucun projet ouvert</h2>
+    <p>Ouvrez un dossier : le planning est construit à partir de <code>tasks.json</code>.</p>
+    <button type="button" class="btn-primary" (click)="openProject()">
+      <span class="material-symbols-outlined">create_new_folder</span>
+      Ouvrir un projet
+    </button>
+  </section>
+} @else {
+  <div class="toolbar">
+    <label class="search">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="search"
+        placeholder="Rechercher une tâche…"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </label>
+
+    <select
+      aria-label="Filtrer par responsable"
+      [value]="assigneeFilter()"
+      (change)="assigneeFilter.set($any($event.target).value)"
+    >
+      <option value="">Responsable</option>
+      @for (assignee of assignees(); track assignee) {
+        <option [value]="assignee">{{ assignee }}</option>
+      }
+    </select>
+
+    <select
+      aria-label="Filtrer par statut"
+      [value]="statusFilter()"
+      (change)="statusFilter.set($any($event.target).value)"
+    >
+      <option value="">Statut</option>
+      @for (status of statuses; track status) {
+        <option [value]="status">{{ statusLabels[status] }}</option>
+      }
+    </select>
+
+    @if (hasFilter()) {
+      <button type="button" class="btn-link" (click)="resetFilters()">Réinitialiser</button>
+    }
+
+    <div class="spacer"></div>
+
+    <button type="button" class="btn-secondary" (click)="scrollToToday()">Aujourd'hui</button>
+
+    <div class="segmented" role="group" aria-label="Échelle">
+      @for (s of scales; track s) {
+        <button type="button" [class.active]="scale() === s" (click)="setScale(s)">
+          {{ scaleLabels[s] }}
+        </button>
+      }
     </div>
+  </div>
 
-    <div class="timeline">
-      <div class="bar" [style.width.px]="100">{{ task.progress }} %</div>
+  <div class="gantt" #scroller>
+    <div class="inner" [style.--timeline-width.px]="width()" [style.--day-width.px]="dayWidth()">
+      <div class="head">
+        <div class="left head-left">
+          <span class="c-name">Tâche</span>
+          <span class="c-date">Début</span>
+          <span class="c-date">Fin</span>
+          <span class="c-status">Statut</span>
+        </div>
+        <div class="timeline head-timeline">
+          <div class="months">
+            @for (m of months(); track m.offset) {
+              <span
+                class="month"
+                [style.left.px]="m.offset * dayWidth()"
+                [style.width.px]="m.span * dayWidth()"
+              >
+                {{ m.label }}
+              </span>
+            }
+          </div>
+          <div class="sub">
+            @for (t of subTicks(); track t.offset) {
+              <span
+                class="tick"
+                [style.left.px]="t.offset * dayWidth()"
+                [style.width.px]="t.span * dayWidth()"
+              >
+                {{ t.label }}
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+
+      @for (row of rows(); track row.task.id) {
+        <div class="row">
+          <div class="left" (click)="open(row.task)">
+            <span class="c-name" [title]="row.task.title">{{ row.task.title }}</span>
+            <span class="c-date">{{ row.startLabel || '—' }}</span>
+            <span class="c-date" [class.overdue]="row.overdue">{{ row.endLabel || '—' }}</span>
+            <span class="c-status">
+              <span class="badge" [attr.data-status]="row.task.status">
+                {{ statusLabels[row.task.status] }}
+              </span>
+            </span>
+          </div>
+
+          <div class="timeline">
+            @for (x of gridlines(); track x) {
+              <span class="gridline" [style.left.px]="x"></span>
+            }
+            <span class="today" [style.left.px]="todayOffset()"></span>
+
+            @if (row.span) {
+              <div
+                class="bar"
+                tabindex="0"
+                role="button"
+                [attr.data-status]="row.task.status"
+                [class.overdue]="row.overdue"
+                [style.left.px]="row.left"
+                [style.width.px]="row.width"
+                [title]="row.task.title + ' : ' + row.startLabel + ' → ' + row.endLabel"
+                (pointerdown)="startDrag($event, row, 'move')"
+                (pointermove)="moveDrag($event)"
+                (pointerup)="endDrag(row)"
+                (pointercancel)="cancelDrag()"
+                (keydown.enter)="open(row.task)"
+              >
+                <span class="fill" [style.width.%]="row.progress"></span>
+                <span
+                  class="handle start"
+                  (pointerdown)="startDrag($event, row, 'start')"
+                  (pointermove)="moveDrag($event)"
+                  (pointerup)="endDrag(row)"
+                  (pointercancel)="cancelDrag()"
+                ></span>
+                <span class="text">{{ row.task.title }}</span>
+                <span
+                  class="handle end"
+                  (pointerdown)="startDrag($event, row, 'end')"
+                  (pointermove)="moveDrag($event)"
+                  (pointerup)="endDrag(row)"
+                  (pointercancel)="cancelDrag()"
+                ></span>
+              </div>
+            } @else {
+              <span class="unscheduled">Non planifiée : ajoutez un début ou une échéance</span>
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="empty">
+          {{
+            hasFilter() ? 'Aucune tâche ne correspond aux filtres.' : 'Aucune tâche pour le moment.'
+          }}
+        </p>
+      }
     </div>
   </div>
 }

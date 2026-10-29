@@ -2,7 +2,10 @@
   <div>
     <h1>Projets</h1>
     <p class="subtitle">
-      Tableau Kanban @if (projectName()) { - {{ projectName() }} }
+      Tableau Kanban
+      @if (projectName()) {
+        - {{ projectName() }}
+      }
     </p>
   </div>
 
@@ -108,7 +111,13 @@
         >
           @for (task of byStatus()[column.status]; track task.id) {
             <div class="task-wrapper" cdkDrag [cdkDragData]="task">
-              <app-task-card [task]="task" (opened)="open(task)" (removed)="remove(task)" />
+              <app-task-card
+                [task]="task"
+                (opened)="open(task)"
+                (removed)="remove(task)"
+                (subtaskToggled)="toggleSubtask(task, $event)"
+                (subtaskOpened)="openSubtask(task, $event)"
+              />
             </div>
           } @empty {
             <p class="empty">Aucune tâche</p>

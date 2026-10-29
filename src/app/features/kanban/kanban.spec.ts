@@ -30,6 +30,7 @@ describe('KanbanComponent', () => {
   const taskService = {
     tasksSignal: tasks.asReadonly(),
     moveTo: vi.fn(),
+    update: vi.fn(),
     delete: vi.fn(),
     createEmpty: () => makeTask('new', { title: 'Nouvelle tâche' }),
   };
@@ -40,7 +41,10 @@ describe('KanbanComponent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('confirm', vi.fn(() => true));
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true),
+    );
     tasks.set([
       makeTask('a', { priority: 'LOW', assignedTo: 'Sophie', tags: ['UI'], title: 'Zèbre' }),
       makeTask('b', { priority: 'HIGH', tags: ['API'], title: 'Alpha' }),
@@ -189,9 +193,44 @@ describe('KanbanComponent', () => {
       kanban.remove(tasks()[0]);
       expect(taskService.delete).toHaveBeenCalledWith('a');
 
-      vi.stubGlobal('confirm', vi.fn(() => false));
+      vi.stubGlobal(
+        'confirm',
+        vi.fn(() => false),
+      );
       kanban.remove(tasks()[1]);
       expect(taskService.delete).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('coche une sous-tâche depuis la carte et enregistre la tâche', () => {
+    const task = makeTask('s', {
+      checklist: [
+        { id: '1', label: 'a', completed: false },
+        { id: '2', label: 'b', completed: true },
+      ],
+    });
+
+    kanban.toggleSubtask(task, '1');
+    kanban.toggleSubtask(task, '2');
+
+    expect(taskService.update).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        id: 's',
+        checklist: [
+          { id: '1', label: 'a', completed: true },
+          { id: '2', label: 'b', completed: true },
+        ],
+      }),
+    );
+    expect(taskService.update.mock.calls[1][0].checklist[1].completed).toBe(false);
+  });
+
+  it('ouvre le formulaire de la sous-tâche cliquée', () => {
+    const task = makeTask('s', { checklist: [{ id: '1', label: 'a', completed: false }] });
+
+    kanban.openSubtask(task, '1');
+
+    expect(dialog.open.mock.calls[0][1].data).toEqual({ task, subtaskId: '1' });
   });
 });
