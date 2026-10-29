@@ -1,4 +1,3 @@
-import { Dialog } from '@angular/cdk/dialog';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -7,6 +6,7 @@ import { Task } from '../../core/models/task.model';
 import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
 import { KanbanComponent } from './kanban';
+import { TaskDialogService } from './services/task-dialog.service';
 
 function makeTask(id: string, overrides: Partial<Task> = {}): Task {
   return {
@@ -34,7 +34,7 @@ describe('KanbanComponent', () => {
     delete: vi.fn(),
     createEmpty: () => makeTask('new', { title: 'Nouvelle tâche' }),
   };
-  const dialog = { open: vi.fn() };
+  const dialogs = { openTask: vi.fn(), openSubtask: vi.fn() };
   const storage = { isOpen: signal(true), root: signal({ name: 'Mon projet' }) };
 
   let kanban: KanbanComponent;
@@ -56,7 +56,7 @@ describe('KanbanComponent', () => {
       providers: [
         { provide: TaskService, useValue: taskService },
         { provide: StorageService, useValue: storage },
-        { provide: Dialog, useValue: dialog },
+        { provide: TaskDialogService, useValue: dialogs },
       ],
     });
     kanban = TestBed.runInInjectionContext(() => new KanbanComponent());
@@ -178,15 +178,15 @@ describe('KanbanComponent', () => {
     it('ouvre le dialogue en mode création avec le statut de la colonne', () => {
       kanban.addTask('IN_PROGRESS');
 
-      const config = dialog.open.mock.calls[0][1];
-      expect(config.data.isNew).toBe(true);
-      expect(config.data.task.status).toBe('IN_PROGRESS');
+      const [task, isNew] = dialogs.openTask.mock.calls[0];
+      expect(isNew).toBe(true);
+      expect(task.status).toBe('IN_PROGRESS');
     });
 
     it('ouvre une tâche existante sans mode création', () => {
       kanban.open(tasks()[0]);
 
-      expect(dialog.open.mock.calls[0][1].data).toEqual({ task: tasks()[0], isNew: false });
+      expect(dialogs.openTask).toHaveBeenCalledWith(tasks()[0], false);
     });
 
     it('supprime après confirmation uniquement', () => {
@@ -231,6 +231,100 @@ describe('KanbanComponent', () => {
 
     kanban.openSubtask(task, '1');
 
-    expect(dialog.open.mock.calls[0][1].data).toEqual({ task, subtaskId: '1' });
+    expect(dialogs.openSubtask).toHaveBeenCalledWith(task, '1');
+  });
+
+  it('masque les tâches désactivées depuis le Gantt', () => {
+    tasks.update((list) => list.map((t) => (t.id === 'b' ? { ...t, showInKanban: false } : t)));
+
+    expect(ids('TODO')).toEqual(['a', 'd']);
+    expect(kanban.hiddenCount()).toBe(1);
+
+    tasks.update((list) => list.map((t) => (t.id === 'b' ? { ...t, showInKanban: true } : t)));
+    expect(ids('TODO')).toEqual(['a', 'b', 'd']);
+    expect(kanban.hiddenCount()).toBe(0);
+  });
+
+  describe('tâches masquées (hors sprint)', () => {
+    beforeEach(() => {
+      tasks.update((list) =>
+        list.map((t) => (t.id === 'b' || t.id === 'c' ? { ...t, showInKanban: false } : t)),
+      );
+    });
+
+    it('les sépare du tableau et les range par colonne', () => {
+      expect(ids('TODO')).toEqual(['a', 'd']);
+      expect(ids('DONE')).toEqual([]);
+      expect(kanban.hiddenTasks().map((t) => t.id)).toEqual(['b', 'c']);
+      expect(kanban.hiddenCount()).toBe(2);
+    });
+
+    it('est replié par défaut', () => {
+      expect(kanban.hiddenOpen()).toBe(false);
+    });
+
+    it('applique les filtres aux tâches masquées, sans changer le total', () => {
+      kanban.priorityFilter.set('HIGH');
+
+      expect(kanban.hiddenTasks().map((t) => t.id)).toEqual(['b']);
+      expect(kanban.hiddenCount()).toBe(2);
+    });
+
+    it('masque une tâche du sprint ou la réintègre en enregistrant', () => {
+      kanban.toggleSprint(tasks()[0]);
+      expect(taskService.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ id: 'a', showInKanban: false }),
+      );
+
+      kanban.toggleSprint(tasks()[1]);
+      expect(taskService.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ id: 'b', showInKanban: true }),
+      );
+    });
+  });
+
+  describe('archives', () => {
+    beforeEach(() => {
+      tasks.update((list) =>
+        list.map((t) => {
+          if (t.id === 'a') return { ...t, archived: true, archivedAt: '2026-10-01T00:00:00.000Z' };
+          if (t.id === 'c') return { ...t, archived: true, archivedAt: '2026-10-05T00:00:00.000Z' };
+          if (t.id === 'd') return { ...t, showInKanban: false };
+          return t;
+        }),
+      );
+    });
+
+    it('retire les tâches archivées du tableau et des masquées', () => {
+      expect(ids('TODO')).toEqual(['b']);
+      expect(ids('DONE')).toEqual([]);
+      expect(kanban.hiddenTasks().map((t) => t.id)).toEqual(['d']);
+      expect(kanban.hiddenCount()).toBe(1);
+    });
+
+    it('liste les archivées, la plus récente d’abord, et les compte', () => {
+      expect(kanban.archivedTasks().map((t) => t.id)).toEqual(['c', 'a']);
+      expect(kanban.archivedCount()).toBe(2);
+      expect(kanban.archivedOpen()).toBe(false);
+    });
+
+    it('applique les filtres aux archivées sans changer le total', () => {
+      kanban.priorityFilter.set('LOW');
+
+      expect(kanban.archivedTasks().map((t) => t.id)).toEqual(['a']);
+      expect(kanban.archivedCount()).toBe(2);
+    });
+
+    it('archive une tâche puis la restaure', () => {
+      kanban.toggleArchive(tasks().find((t) => t.id === 'b')!);
+      expect(taskService.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ id: 'b', archived: true, archivedAt: expect.any(String) }),
+      );
+
+      kanban.toggleArchive(tasks().find((t) => t.id === 'a')!);
+      expect(taskService.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ id: 'a', archived: false, archivedAt: undefined }),
+      );
+    });
   });
 });

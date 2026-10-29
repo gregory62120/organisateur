@@ -1,3 +1,4 @@
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CalendarComponent } from './calendar';
@@ -8,9 +9,9 @@ describe('CalendarComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CalendarComponent]
-    })
-    .compileComponents();
+      imports: [CalendarComponent],
+      providers: [provideNativeDateAdapter()],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(CalendarComponent);
     component = fixture.componentInstance;

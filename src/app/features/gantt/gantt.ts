@@ -1,4 +1,4 @@
-import { Dialog } from '@angular/cdk/dialog';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   afterNextRender,
@@ -10,13 +10,15 @@ import {
 } from '@angular/core';
 
 import { Task, TaskStatus } from '../../core/models/task.model';
+import { STATUS_LABELS, STATUSES, formatDueDate, isOverdue } from '../../core/models/task-labels';
 import {
-  STATUS_LABELS,
-  STATUSES,
-  formatDueDate,
-  initials,
-  isOverdue,
-} from '../../core/models/task-labels';
+  countByGroup,
+  TaskGroup,
+  taskGroup,
+  toggleArchived,
+  toggleSprint,
+  uniqueAssignees,
+} from '../../core/models/task-state';
 import {
   DAY_WIDTHS,
   GanttScale,
@@ -26,7 +28,8 @@ import {
 } from '../../core/services/gantt.service';
 import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
-import { TaskDialogComponent, TaskDialogData } from '../kanban/components/task-dialog/task-dialog';
+import { CollapsibleSectionComponent } from '../../shared/collapsible-section/collapsible-section';
+import { TaskDialogService } from '../kanban/services/task-dialog.service';
 
 type DragMode = 'move' | 'start' | 'end';
 
@@ -44,21 +47,23 @@ export interface GanttRow {
   width: number;
   progress: number;
   overdue: boolean;
+  group: TaskGroup;
+  statusLabel: string;
   startLabel: string;
   endLabel: string;
-  initials: string;
 }
 
 @Component({
   selector: 'app-gantt',
   standalone: true,
+  imports: [NgTemplateOutlet, CollapsibleSectionComponent],
   templateUrl: './gantt.html',
   styleUrl: './gantt.scss',
 })
 export class GanttComponent {
   private gantt = inject(GanttService);
 
-  private dialog = inject(Dialog);
+  private dialogs = inject(TaskDialogService);
 
   taskService = inject(TaskService);
 
@@ -86,11 +91,7 @@ export class GanttComponent {
 
   readonly dayWidth = computed(() => DAY_WIDTHS[this.scale()]);
 
-  readonly assignees = computed(() =>
-    [...new Set(this.taskService.tasksSignal().map((t) => t.assignedTo?.trim()))]
-      .filter((a): a is string => !!a)
-      .sort((a, b) => a.localeCompare(b)),
-  );
+  readonly assignees = computed(() => uniqueAssignees(this.taskService.tasksSignal()));
 
   private readonly visibleTasks = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -137,7 +138,7 @@ export class GanttComponent {
     return offset * this.dayWidth();
   });
 
-  readonly rows = computed<GanttRow[]>(() => {
+  private readonly allRows = computed<GanttRow[]>(() => {
     const drag = this.drag();
     const width = this.dayWidth();
     const range = this.range();
@@ -153,9 +154,10 @@ export class GanttComponent {
           width: span ? (this.gantt.diffDays(span.start, span.end) + 1) * width : 0,
           progress: this.gantt.progress(task),
           overdue: isOverdue(task),
+          group: taskGroup(task),
+          statusLabel: STATUS_LABELS[task.status],
           startLabel: formatDueDate(span ? this.gantt.toIso(span.start) : ''),
           endLabel: formatDueDate(span ? this.gantt.toIso(span.end) : ''),
-          initials: initials(task.assignedTo),
         };
       })
       .sort((a, b) => {
@@ -165,6 +167,26 @@ export class GanttComponent {
         return a.span.start.getTime() - b.span.start.getTime();
       });
   });
+
+  /** Tâches du sprint : celles affichées dans le Kanban. */
+  readonly rows = computed(() => this.allRows().filter((r) => r.group === 'sprint'));
+
+  /** Tâches masquées (hors sprint), dans la section dépliable. */
+  readonly hiddenRows = computed(() => this.allRows().filter((r) => r.group === 'hidden'));
+
+  /** Tâches archivées, dans leur propre section dépliable. */
+  readonly archivedRows = computed(() => this.allRows().filter((r) => r.group === 'archived'));
+
+  /** Totaux par groupe, filtres ignorés. */
+  private readonly counts = computed(() => countByGroup(this.taskService.tasksSignal()));
+
+  readonly hiddenCount = computed(() => this.counts().hidden);
+
+  readonly archivedCount = computed(() => this.counts().archived);
+
+  readonly hiddenOpen = signal(false);
+
+  readonly archivedOpen = signal(false);
 
   readonly hasFilter = computed(
     () => !!(this.search().trim() || this.statusFilter() || this.assigneeFilter()),
@@ -189,6 +211,16 @@ export class GanttComponent {
     queueMicrotask(() => this.scrollToToday());
   }
 
+  toggleArchive(event: Event, task: Task) {
+    event.stopPropagation();
+    this.taskService.update(toggleArchived(task));
+  }
+
+  toggleKanban(event: Event, task: Task) {
+    event.stopPropagation();
+    this.taskService.update(toggleSprint(task));
+  }
+
   resetFilters() {
     this.search.set('');
     this.statusFilter.set('');
@@ -204,12 +236,7 @@ export class GanttComponent {
   }
 
   open(task: Task) {
-    this.dialog.open<unknown, TaskDialogData>(TaskDialogComponent, {
-      data: { task, isNew: false },
-      panelClass: 'tf-dialog-panel',
-      maxWidth: '96vw',
-      maxHeight: '94vh',
-    });
+    this.dialogs.openTask(task);
   }
 
   startDrag(event: PointerEvent, row: GanttRow, mode: DragMode) {

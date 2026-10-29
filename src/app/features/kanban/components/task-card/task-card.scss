@@ -36,7 +36,13 @@ h3 {
   overflow-wrap: anywhere;
 }
 
-.delete {
+.actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.action {
   display: flex;
   padding: 2px;
   border: none;
@@ -52,14 +58,44 @@ h3 {
   }
 
   &:hover {
+    background: var(--tf-bg);
+    color: var(--tf-primary);
+  }
+
+  &.delete:hover {
     background: var(--tf-red-soft);
     color: var(--tf-red);
   }
 }
 
-.task:hover .delete,
-.task:focus-within .delete {
+.task:hover .action,
+.task:focus-within .action {
   opacity: 1;
+}
+
+.status-chip {
+  align-self: flex-start;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #eef2fa;
+  color: #5a6b8c;
+  font-size: 11px;
+  font-weight: 600;
+
+  &[data-status='IN_PROGRESS'] {
+    background: var(--tf-primary-soft);
+    color: var(--tf-primary);
+  }
+
+  &[data-status='VALIDATION'] {
+    background: var(--tf-orange-soft);
+    color: #b86a00;
+  }
+
+  &[data-status='DONE'] {
+    background: var(--tf-green-soft);
+    color: #12805a;
+  }
 }
 
 .tags {

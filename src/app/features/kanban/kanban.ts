@@ -1,5 +1,4 @@
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
-import { Dialog } from '@angular/cdk/dialog';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Priority, Task, TaskStatus } from '../../core/models/task.model';
 import {
@@ -11,14 +10,18 @@ import {
   STATUS_LABELS,
   TaskSort,
 } from '../../core/models/task-labels';
+import {
+  countByGroup,
+  taskGroup,
+  toggleArchived,
+  toggleSprint,
+  uniqueAssignees,
+} from '../../core/models/task-state';
 import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
+import { CollapsibleSectionComponent } from '../../shared/collapsible-section/collapsible-section';
 import { TaskCardComponent } from './components/task-card/task-card';
-import {
-  SubtaskDialogComponent,
-  SubtaskDialogData,
-} from './components/subtask-dialog/subtask-dialog';
-import { TaskDialogComponent, TaskDialogData } from './components/task-dialog/task-dialog';
+import { TaskDialogService } from './services/task-dialog.service';
 
 interface Column {
   status: TaskStatus;
@@ -31,7 +34,7 @@ interface Column {
 
   standalone: true,
 
-  imports: [CdkDropList, CdkDrag, CdkDropListGroup, TaskCardComponent],
+  imports: [CdkDropList, CdkDrag, CdkDropListGroup, TaskCardComponent, CollapsibleSectionComponent],
 
   templateUrl: './kanban.html',
   styleUrl: './kanban.scss',
@@ -41,7 +44,7 @@ export class KanbanComponent {
 
   storage = inject(StorageService);
 
-  private dialog = inject(Dialog);
+  private dialogs = inject(TaskDialogService);
 
   readonly columns: Column[] = [
     { status: 'TODO', name: STATUS_LABELS.TODO, tone: 'todo' },
@@ -76,13 +79,9 @@ export class KanbanComponent {
     ),
   );
 
-  readonly assignees = computed(() =>
-    [...new Set(this.taskService.tasksSignal().map((t) => t.assignedTo?.trim()))]
-      .filter((a): a is string => !!a)
-      .sort((a, b) => a.localeCompare(b)),
-  );
+  readonly assignees = computed(() => uniqueAssignees(this.taskService.tasksSignal()));
 
-  private readonly filtered = computed(() => {
+  private readonly matching = computed(() => {
     const term = this.search().trim().toLowerCase();
     const priority = this.priorityFilter();
     const assignee = this.assigneeFilter();
@@ -99,6 +98,7 @@ export class KanbanComponent {
     });
   });
 
+  /** Tâches du sprint, réparties par colonne (c'est le tableau principal). */
   readonly byStatus = computed(() => {
     const groups: Record<TaskStatus, Task[]> = {
       TODO: [],
@@ -106,8 +106,10 @@ export class KanbanComponent {
       VALIDATION: [],
       DONE: [],
     };
-    for (const task of this.filtered()) {
-      groups[task.status]?.push(task);
+    for (const task of this.matching()) {
+      if (taskGroup(task) === 'sprint') {
+        groups[task.status]?.push(task);
+      }
     }
     const compare = compareTasks(this.sort());
     if (compare) {
@@ -117,6 +119,33 @@ export class KanbanComponent {
     }
     return groups;
   });
+
+  /** Tâches hors sprint (masquées), triées par colonne puis selon le tri choisi. */
+  readonly hiddenTasks = computed(() => {
+    const order = this.columns.map((c) => c.status);
+    const compare = compareTasks(this.sort());
+    return this.matching()
+      .filter((t) => taskGroup(t) === 'hidden')
+      .sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || (compare?.(a, b) ?? 0));
+  });
+
+  /** Tâches archivées, les plus récemment archivées en premier. */
+  readonly archivedTasks = computed(() =>
+    this.matching()
+      .filter((t) => taskGroup(t) === 'archived')
+      .sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? '')),
+  );
+
+  /** Totaux par groupe, filtres ignorés. */
+  private readonly counts = computed(() => countByGroup(this.taskService.tasksSignal()));
+
+  readonly hiddenCount = computed(() => this.counts().hidden);
+
+  readonly archivedCount = computed(() => this.counts().archived);
+
+  readonly hiddenOpen = signal(false);
+
+  readonly archivedOpen = signal(false);
 
   readonly hasFilter = computed(
     () =>
@@ -172,21 +201,19 @@ export class KanbanComponent {
   }
 
   open(task: Task, isNew = false) {
-    this.dialog.open<unknown, TaskDialogData>(TaskDialogComponent, {
-      data: { task, isNew },
-      panelClass: 'tf-dialog-panel',
-      maxWidth: '96vw',
-      maxHeight: '94vh',
-    });
+    this.dialogs.openTask(task, isNew);
   }
 
   openSubtask(task: Task, subtaskId: string) {
-    this.dialog.open<unknown, SubtaskDialogData>(SubtaskDialogComponent, {
-      data: { task, subtaskId },
-      panelClass: 'tf-dialog-panel',
-      maxWidth: '96vw',
-      maxHeight: '94vh',
-    });
+    this.dialogs.openSubtask(task, subtaskId);
+  }
+
+  toggleArchive(task: Task) {
+    this.taskService.update(toggleArchived(task));
+  }
+
+  toggleSprint(task: Task) {
+    this.taskService.update(toggleSprint(task));
   }
 
   toggleSubtask(task: Task, id: string) {

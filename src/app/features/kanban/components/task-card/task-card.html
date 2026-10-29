@@ -1,10 +1,43 @@
 <article class="task" tabindex="0" (click)="opened.emit()" (keydown.enter)="opened.emit()">
   <header>
     <h3>{{ task().title }}</h3>
-    <button type="button" class="delete" title="Supprimer la tâche" (click)="delete($event)">
-      <span class="material-symbols-outlined">delete</span>
-    </button>
+    <span class="actions">
+      @if (group() !== 'archived') {
+        <button
+          type="button"
+          class="action sprint"
+          [title]="group() === 'sprint' ? 'Masquer (hors sprint)' : 'Ajouter au sprint'"
+          (click)="toggleSprint($event)"
+        >
+          <span class="material-symbols-outlined">
+            {{ group() === 'sprint' ? 'visibility_off' : 'visibility' }}
+          </span>
+        </button>
+      }
+      <button
+        type="button"
+        class="action archive"
+        [title]="group() === 'archived' ? 'Restaurer' : 'Archiver'"
+        (click)="toggleArchive($event)"
+      >
+        <span class="material-symbols-outlined">
+          {{ group() === 'archived' ? 'unarchive' : 'archive' }}
+        </span>
+      </button>
+      <button
+        type="button"
+        class="action delete"
+        title="Supprimer la tâche"
+        (click)="delete($event)"
+      >
+        <span class="material-symbols-outlined">delete</span>
+      </button>
+    </span>
   </header>
+
+  @if (group() !== 'sprint') {
+    <span class="status-chip" [attr.data-status]="task().status">{{ statusLabel() }}</span>
+  }
 
   @if (task().tags?.length) {
     <ul class="tags">
@@ -50,7 +83,7 @@
                 {{ item.label }}
               </button>
               @if (item.dueDate) {
-                <span class="subtask-due">{{ dueShort(item.dueDate) }}</span>
+                <span class="subtask-due">{{ formatDate(item.dueDate) }}</span>
               }
             </li>
           }

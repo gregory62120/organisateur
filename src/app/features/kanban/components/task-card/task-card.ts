@@ -1,11 +1,13 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { Task } from '../../../../core/models/task.model';
+import { TaskGroup } from '../../../../core/models/task-state';
 import {
   avatarColor,
   formatDueDate,
   initials,
   isOverdue,
   PRIORITY_LABELS,
+  STATUS_LABELS,
   tagTone,
 } from '../../../../core/models/task-labels';
 
@@ -18,7 +20,19 @@ import {
 export class TaskCardComponent {
   readonly task = input.required<Task>();
 
+  /**
+   * Groupe de la carte : hors du sprint, elle affiche son statut ;
+   * archivée, seule la restauration est proposée.
+   */
+  readonly group = input<TaskGroup>('sprint');
+
   readonly opened = output<void>();
+
+  /** Demande de faire passer la tâche du sprint au groupe masqué, ou l'inverse. */
+  readonly sprintToggled = output<void>();
+
+  /** Demande d'archivage, ou de restauration pour une tâche archivée. */
+  readonly archiveToggled = output<void>();
 
   readonly removed = output<void>();
 
@@ -29,6 +43,8 @@ export class TaskCardComponent {
   readonly subtaskOpened = output<string>();
 
   readonly subtasksOpen = signal(true);
+
+  readonly statusLabel = computed(() => STATUS_LABELS[this.task().status]);
 
   readonly priorityLabel = computed(() => PRIORITY_LABELS[this.task().priority]);
 
@@ -49,28 +65,35 @@ export class TaskCardComponent {
 
   readonly tone = tagTone;
 
-  dueShort(date: string): string {
-    return formatDueDate(date);
+  readonly formatDate = formatDueDate;
+
+  /** Les actions de la carte ne doivent pas ouvrir la tâche. */
+  private act(event: Event, action: () => void) {
+    event.stopPropagation();
+    action();
   }
 
   toggleSubtasks(event: Event) {
-    event.stopPropagation();
-    this.subtasksOpen.update((open) => !open);
+    this.act(event, () => this.subtasksOpen.update((open) => !open));
   }
 
   openSubtask(event: Event, id: string) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.subtaskOpened.emit(id);
+    this.act(event, () => this.subtaskOpened.emit(id));
   }
 
   toggleSubtask(event: Event, id: string) {
-    event.stopPropagation();
-    this.subtaskToggled.emit(id);
+    this.act(event, () => this.subtaskToggled.emit(id));
+  }
+
+  toggleArchive(event: Event) {
+    this.act(event, () => this.archiveToggled.emit());
+  }
+
+  toggleSprint(event: Event) {
+    this.act(event, () => this.sprintToggled.emit());
   }
 
   delete(event: Event) {
-    event.stopPropagation();
-    this.removed.emit();
+    this.act(event, () => this.removed.emit());
   }
 }

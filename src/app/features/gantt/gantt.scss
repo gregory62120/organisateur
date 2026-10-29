@@ -1,53 +1,21 @@
+@use '../../shared/styles/page' as page;
+
 :host {
   display: block;
 }
 
-$left-width: 440px;
-$row-height: 48px;
-
-.page-head {
-  margin-bottom: 20px;
-
-  h1 {
-    margin: 0;
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--tf-text);
-  }
-
-  .subtitle {
-    margin: 4px 0 0;
-    color: var(--tf-muted);
-    font-size: 14px;
-  }
-}
+@include page.page;
 
 .toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-
-  select,
-  .search,
   .btn-secondary {
     height: 40px;
+    padding: 0 16px;
     border: 1px solid var(--tf-border);
     border-radius: 10px;
     background: var(--tf-surface);
     color: var(--tf-text);
     font: inherit;
     font-size: 14px;
-  }
-
-  select {
-    padding: 0 12px;
-    cursor: pointer;
-  }
-
-  .btn-secondary {
-    padding: 0 16px;
     font-weight: 600;
     cursor: pointer;
 
@@ -56,64 +24,13 @@ $row-height: 48px;
     }
   }
 
-  .search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1 1 220px;
-    max-width: 320px;
-    padding: 0 12px;
-
-    .material-symbols-outlined {
-      font-size: 20px;
-      color: var(--tf-muted);
-    }
-
-    input {
-      flex: 1;
-      min-width: 0;
-      border: none;
-      outline: none;
-      background: transparent;
-      font: inherit;
-      color: inherit;
-    }
-
-    &:focus-within {
-      border-color: var(--tf-primary);
-      box-shadow: 0 0 0 3px var(--tf-primary-soft);
-    }
-  }
-
   .spacer {
     flex: 1;
   }
 }
 
-.btn-link {
-  border: none;
-  background: none;
-  color: var(--tf-primary);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 10px;
-  background: var(--tf-primary);
-  color: #fff;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
+$left-width: 552px;
+$row-height: 48px;
 
 .segmented {
   display: inline-flex;
@@ -215,6 +132,36 @@ $row-height: 48px;
 
   .c-status {
     width: 74px;
+  }
+
+  .c-kanban {
+    width: 52px;
+    text-align: center;
+  }
+}
+
+.eye {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--tf-primary);
+  cursor: pointer;
+
+  &.off {
+    color: var(--tf-muted);
+    opacity: 0.7;
+  }
+
+  .material-symbols-outlined {
+    padding: 4px;
+    border-radius: 8px;
+    font-size: 20px;
+  }
+
+  &:hover .material-symbols-outlined {
+    background: var(--tf-primary-soft);
   }
 }
 
@@ -426,39 +373,4 @@ $row-height: 48px;
   text-align: center;
   color: var(--tf-muted);
   font-size: 14px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  max-width: 460px;
-  margin: 60px auto;
-  padding: 40px 32px;
-  border: 1px solid var(--tf-border);
-  border-radius: var(--tf-radius);
-  background: var(--tf-surface);
-  box-shadow: var(--tf-shadow);
-  text-align: center;
-
-  > .material-symbols-outlined {
-    padding: 14px;
-    border-radius: 50%;
-    background: var(--tf-primary-soft);
-    color: var(--tf-primary);
-    font-size: 32px;
-  }
-
-  h2 {
-    margin: 8px 0 0;
-    font-size: 18px;
-    color: var(--tf-text);
-  }
-
-  p {
-    margin: 0 0 12px;
-    color: var(--tf-muted);
-    font-size: 14px;
-  }
 }

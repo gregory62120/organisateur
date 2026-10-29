@@ -53,6 +53,14 @@ export interface Task {
 
   attachments: string[];
 
+  /** Affichée dans le Kanban tant que la valeur n'est pas `false`. */
+  showInKanban?: boolean;
+
+  /** Une tâche archivée disparaît du Kanban et du Gantt, sauf de leur section « Archivées ». */
+  archived?: boolean;
+
+  archivedAt?: string;
+
   createdAt: string;
 
   updatedAt: string;

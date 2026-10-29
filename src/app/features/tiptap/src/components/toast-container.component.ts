@@ -1,9 +1,9 @@
-import { Component, inject } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { ToastService } from "../services/toast.service";
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ToastService } from '../services/toast.service';
 
 @Component({
-  selector: "app-toast-container",
+  selector: 'app-toast-container',
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -16,16 +16,17 @@ import { ToastService } from "../services/toast.service";
           tabindex="0"
           (click)="dismiss(toast.id)"
           (keydown.enter)="dismiss(toast.id)"
-          (keydown.escape)="dismiss(toast.id)">
+          (keydown.escape)="dismiss(toast.id)"
+        >
           <span class="material-symbols-outlined toast-icon">
             @switch (toast.type) {
-              @case ("success") {
+              @case ('success') {
                 check_circle
               }
-              @case ("error") {
+              @case ('error') {
                 error
               }
-              @case ("warning") {
+              @case ('warning') {
                 warning
               }
               @default {

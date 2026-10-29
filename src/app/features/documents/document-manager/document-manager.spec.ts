@@ -8,9 +8,8 @@ describe('DocumentManagerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DocumentManagerComponent]
-    })
-    .compileComponents();
+      imports: [DocumentManagerComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(DocumentManagerComponent);
     component = fixture.componentInstance;

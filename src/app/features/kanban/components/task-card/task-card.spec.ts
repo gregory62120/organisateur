@@ -159,4 +159,62 @@ describe('TaskCardComponent', () => {
       expect(opened).not.toHaveBeenCalled();
     });
   });
+
+  describe('sprint', () => {
+    it('propose de masquer une tâche du sprint sans ouvrir la carte', async () => {
+      await render();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.sprintToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      const button = el.querySelector<HTMLElement>('.sprint')!;
+      expect(button.title).toContain('Masquer');
+      expect(el.querySelector('.status-chip')).toBeNull();
+      button.click();
+
+      expect(toggled).toHaveBeenCalledTimes(1);
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('propose d’ajouter au sprint une tâche masquée et affiche son statut', async () => {
+      fixture = TestBed.createComponent(TaskCardComponent);
+      fixture.componentRef.setInput('task', baseTask);
+      fixture.componentRef.setInput('group', 'hidden');
+      await fixture.whenStable();
+      el = fixture.nativeElement;
+
+      expect(el.querySelector<HTMLElement>('.sprint')!.title).toContain('Ajouter au sprint');
+      expect(el.querySelector('.status-chip')?.textContent).toContain('À faire');
+    });
+  });
+
+  describe('archivage', () => {
+    it('propose d’archiver sans ouvrir la carte', async () => {
+      await render();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.archiveToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      const button = el.querySelector<HTMLElement>('.archive')!;
+      expect(button.title).toBe('Archiver');
+      button.click();
+
+      expect(toggled).toHaveBeenCalledTimes(1);
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('propose de restaurer une tâche archivée, sans bouton de sprint, avec son statut', async () => {
+      fixture = TestBed.createComponent(TaskCardComponent);
+      fixture.componentRef.setInput('task', baseTask);
+      fixture.componentRef.setInput('group', 'archived');
+      await fixture.whenStable();
+      el = fixture.nativeElement;
+
+      expect(el.querySelector<HTMLElement>('.archive')!.title).toBe('Restaurer');
+      expect(el.querySelector('.sprint')).toBeNull();
+      expect(el.querySelector('.status-chip')).not.toBeNull();
+    });
+  });
 });

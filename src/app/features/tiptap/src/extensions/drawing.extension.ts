@@ -13,13 +13,7 @@ interface DrawingStroke {
 }
 
 type DrawingPageStyle =
-  | 'blank'
-  | 'seyes'
-  | 'seyesMargin'
-  | 'smallGrid'
-  | 'largeGrid'
-  | 'ruled'
-  | 'largeRuled';
+  'blank' | 'seyes' | 'seyesMargin' | 'smallGrid' | 'largeGrid' | 'ruled' | 'largeRuled';
 
 interface DrawingPageStyleOption {
   value: DrawingPageStyle;
@@ -99,7 +93,16 @@ export const Drawing = Node.create<DrawingOptions>({
       width: 720,
       height: 360,
       color: '#111827',
-      colors: ['#111827', '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7'],
+      colors: [
+        '#111827',
+        '#ef4444',
+        '#f97316',
+        '#eab308',
+        '#22c55e',
+        '#06b6d4',
+        '#3b82f6',
+        '#a855f7',
+      ],
       size: 3,
       eraserSize: 18,
     };
@@ -328,8 +331,7 @@ export const Drawing = Node.create<DrawingOptions>({
       pageStyleMenu.style.border = '1px solid var(--ate-border, #e2e8f0)';
       pageStyleMenu.style.borderRadius = '8px';
       pageStyleMenu.style.background = 'var(--ate-surface, #ffffff)';
-      pageStyleMenu.style.boxShadow =
-        'var(--ate-menu-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+      pageStyleMenu.style.boxShadow = 'var(--ate-menu-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
       pageStyleMenu.style.zIndex = '6';
       pageStyleMenu.style.visibility = 'hidden';
       pageStyleMenu.style.pointerEvents = 'none';
@@ -400,7 +402,8 @@ export const Drawing = Node.create<DrawingOptions>({
       eraserSizeControl.style.border = '1px solid var(--ate-border, #e2e8f0)';
       eraserSizeControl.style.borderRadius = '8px';
       eraserSizeControl.style.background = 'var(--ate-surface, #ffffff)';
-      eraserSizeControl.style.boxShadow = 'var(--ate-menu-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
+      eraserSizeControl.style.boxShadow =
+        'var(--ate-menu-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1))';
       eraserSizeControl.style.zIndex = '5';
       eraserSizeControl.style.visibility = 'hidden';
       eraserSizeControl.style.pointerEvents = 'none';
@@ -485,7 +488,8 @@ export const Drawing = Node.create<DrawingOptions>({
       eraserCursor.style.height = `${currentEraserSize}px`;
       eraserCursor.style.border = '1px solid var(--ate-primary, #2563eb)';
       eraserCursor.style.borderRadius = '999px';
-      eraserCursor.style.background = 'color-mix(in srgb, var(--ate-primary, #2563eb), transparent 88%)';
+      eraserCursor.style.background =
+        'color-mix(in srgb, var(--ate-primary, #2563eb), transparent 88%)';
       eraserCursor.style.boxShadow = '0 0 0 1px rgba(255, 255, 255, 0.85)';
       eraserCursor.style.pointerEvents = 'none';
       eraserCursor.style.opacity = '0';
@@ -637,13 +641,10 @@ export const Drawing = Node.create<DrawingOptions>({
             ? 'var(--ate-primary-light, #dbeafe)'
             : 'var(--ate-surface, #ffffff)';
         eraserButton.style.borderColor =
-          currentTool === 'eraser'
-            ? 'var(--ate-primary, #2563eb)'
-            : 'var(--ate-border, #e2e8f0)';
+          currentTool === 'eraser' ? 'var(--ate-primary, #2563eb)' : 'var(--ate-border, #e2e8f0)';
         currentColorPreview.style.background = currentColor;
         pageStyleIcon.textContent =
-          PAGE_STYLE_OPTIONS.find((option) => option.value === currentPageStyle)?.icon ??
-          'article';
+          PAGE_STYLE_OPTIONS.find((option) => option.value === currentPageStyle)?.icon ?? 'article';
         pageStyleButton.style.background = isPageStyleMenuOpen
           ? 'var(--ate-primary-light, #dbeafe)'
           : 'var(--ate-surface, #ffffff)';
@@ -685,7 +686,8 @@ export const Drawing = Node.create<DrawingOptions>({
         }
 
         context.save();
-        context.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
+        context.globalCompositeOperation =
+          stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
         context.strokeStyle = stroke.color;
         context.lineWidth = stroke.size;
         context.lineCap = 'round';
