@@ -1,36 +1,300 @@
-.board {
+:host {
+  display: block;
+}
+
+.page-head {
   display: flex;
-  gap: 20px;
-  padding: 20px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--tf-text);
+  }
+
+  .subtitle {
+    margin: 4px 0 0;
+    color: var(--tf-muted);
+    font-size: 14px;
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--tf-primary);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  &:hover:not(:disabled) {
+    background: #1f57e0;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+
+  select,
+  .search {
+    height: 40px;
+    border: 1px solid var(--tf-border);
+    border-radius: 10px;
+    background: var(--tf-surface);
+    color: var(--tf-text);
+    font: inherit;
+    font-size: 14px;
+  }
+
+  select {
+    padding: 0 12px;
+    cursor: pointer;
+  }
+
+  .sort {
+    margin-left: auto;
+  }
+
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 260px;
+    max-width: 380px;
+    padding: 0 12px;
+
+    .material-symbols-outlined {
+      font-size: 20px;
+      color: var(--tf-muted);
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+    }
+
+    &:focus-within {
+      border-color: var(--tf-primary);
+      box-shadow: 0 0 0 3px var(--tf-primary-soft);
+    }
+  }
+}
+
+.btn-link {
+  border: none;
+  background: none;
+  color: var(--tf-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(250px, 1fr));
+  gap: 16px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 8px;
 }
 
 .column {
-  width: 280px;
-  background: #f5f5f5;
-  padding: 15px;
-  border-radius: 10px;
+  --tone: #8a97b5;
+  --tone-soft: #eef2fa;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--tf-radius);
+  background: var(--tone-soft);
+
+  &[data-tone='progress'] {
+    --tone: var(--tf-primary);
+    --tone-soft: #e8f0ff;
+  }
+
+  &[data-tone='review'] {
+    --tone: var(--tf-orange);
+    --tone-soft: #fff1da;
+  }
+
+  &[data-tone='done'] {
+    --tone: var(--tf-green);
+    --tone-soft: #e3f7ed;
+  }
+}
+
+.column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+
+  gap: 8px;
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--tone);
+  }
+
+  h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--tf-text);
+  }
+
+  .count {
+    min-width: 24px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--tone);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .head-add {
+    display: flex;
+    padding: 2px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--tone);
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .material-symbols-outlined {
+      font-size: 20px;
+    }
+  }
 }
 
 .tasks {
-  min-height: 300px;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 80px;
+}
+
+.empty {
+  margin: 8px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--tf-muted);
 }
 
 .task-wrapper {
-  margin-bottom: 10px;
   cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
 }
 
-.task-wrapper:active {
-  cursor: grabbing;
+.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  border: 1px dashed var(--tone);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--tone);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 460px;
+  margin: 60px auto;
+  padding: 40px 32px;
+  border: 1px solid var(--tf-border);
+  border-radius: var(--tf-radius);
+  background: var(--tf-surface);
+  box-shadow: var(--tf-shadow);
+  text-align: center;
+
+  > .material-symbols-outlined {
+    padding: 14px;
+    border-radius: 50%;
+    background: var(--tf-primary-soft);
+    color: var(--tf-primary);
+    font-size: 32px;
+  }
+
+  h2 {
+    margin: 8px 0 0;
+    font-size: 18px;
+    color: var(--tf-text);
+  }
+
+  p {
+    margin: 0 0 12px;
+    color: var(--tf-muted);
+    font-size: 14px;
+  }
 }
 
 /* Animation pendant le déplacement */
 
 .cdk-drag-preview {
   box-sizing: border-box;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px #0004;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15, 31, 61, 0.22);
 }
 
 .cdk-drag-placeholder {
@@ -43,47 +307,4 @@
 
 .tasks.cdk-drop-list-dragging .task-wrapper:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-}
-
-button {
-  width: 100%;
-  margin-bottom: 10px;
-
-  padding: 8px;
-
-  border-radius: 6px;
-
-  cursor: pointer;
-}
-
-.overlay {
-  position: fixed;
-
-  inset: 0;
-
-  background: rgba(0, 0, 0, 0.45);
-
-  display: flex;
-
-  justify-content: center;
-
-  align-items: center;
-
-  z-index: 1000;
-}
-
-.dialog {
-  width: 90vw;
-
-  max-width: 1200px;
-
-  height: 90vh;
-
-  background: white;
-
-  border-radius: 12px;
-
-  padding: 30px;
-
-  overflow: auto;
 }

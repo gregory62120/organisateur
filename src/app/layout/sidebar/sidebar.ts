@@ -1,8 +1,6 @@
 import { Component, effect, inject, OnInit } from '@angular/core';
 
-import { RouterLink } from '@angular/router';
-
-import { MatListModule } from '@angular/material/list';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { GithubSyncService } from '../../core/services/github-sync.service';
 import { StorageService } from '../../core/services/storage.service';
 
@@ -11,9 +9,10 @@ import { StorageService } from '../../core/services/storage.service';
 
   standalone: true,
 
-  imports: [RouterLink, MatListModule],
+  imports: [RouterLink, RouterLinkActive],
 
   templateUrl: './sidebar.html',
+  styleUrl: './sidebar.scss',
 })
 export class Sidebar {
   private readonly DEFAULT_CONFIG: string = `
