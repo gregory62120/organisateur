@@ -1,26 +1,125 @@
-<button (click)="openProject()">📂 Ouvrir un projet</button>
+<header class="page-head">
+  <div>
+    <h1>Projets</h1>
+    <p class="subtitle">
+      Tableau Kanban @if (projectName()) { - {{ projectName() }} }
+    </p>
+  </div>
 
-<div class="board" cdkDropListGroup>
-  @for (column of columns; track column.status) {
-    <div class="column">
-      <h2>
-        {{ column.name }}
-      </h2>
+  <button type="button" class="btn-primary" (click)="addTask()" [disabled]="!storage.isOpen()">
+    <span class="material-symbols-outlined">add</span>
+    Nouvelle tâche
+  </button>
+</header>
 
-      <button (click)="addTask(column.status)">+ Ajouter</button>
+@if (!storage.isOpen()) {
+  <section class="empty-state">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h2>Aucun projet ouvert</h2>
+    <p>Ouvrez un dossier : vos tâches sont enregistrées dans le fichier <code>tasks.json</code>.</p>
+    <button type="button" class="btn-primary" (click)="openProject()">
+      <span class="material-symbols-outlined">create_new_folder</span>
+      Ouvrir un projet
+    </button>
+  </section>
+} @else {
+  <div class="toolbar">
+    <label class="search">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="search"
+        placeholder="Rechercher une tâche, une étiquette…"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </label>
 
-      <div
-        class="tasks"
-        cdkDropList
-        [cdkDropListData]="tasks(column.status)"
-        (cdkDropListDropped)="drop($event, column.status)"
-      >
-        @for (task of tasks(column.status); track task.id) {
-          <div cdkDrag [cdkDragData]="task" (dblclick)="open(task)">
-            <app-task-card [task]="task" />
-          </div>
-        }
-      </div>
-    </div>
-  }
-</div>
+    <select
+      aria-label="Filtrer par responsable"
+      [value]="assigneeFilter()"
+      (change)="assigneeFilter.set($any($event.target).value)"
+    >
+      <option value="">Responsable</option>
+      @for (assignee of assignees(); track assignee) {
+        <option [value]="assignee">{{ assignee }}</option>
+      }
+    </select>
+
+    <select
+      aria-label="Filtrer par priorité"
+      [value]="priorityFilter()"
+      (change)="priorityFilter.set($any($event.target).value)"
+    >
+      <option value="">Priorité</option>
+      @for (priority of priorities; track priority) {
+        <option [value]="priority">{{ priorityLabels[priority] }}</option>
+      }
+    </select>
+
+    <select
+      aria-label="Filtrer par étiquette"
+      [value]="tagFilter()"
+      (change)="tagFilter.set($any($event.target).value)"
+    >
+      <option value="">Étiquette</option>
+      @for (tag of tags(); track tag) {
+        <option [value]="tag">{{ tag }}</option>
+      }
+    </select>
+
+    <select
+      class="sort"
+      aria-label="Trier les tâches"
+      [value]="sort()"
+      (change)="sort.set($any($event.target).value)"
+    >
+      @for (s of sorts; track s) {
+        <option [value]="s" [selected]="s === sort()">Trier par : {{ sortLabels[s] }}</option>
+      }
+    </select>
+
+    @if (hasFilter()) {
+      <button type="button" class="btn-link" (click)="resetFilters()">Réinitialiser</button>
+    }
+  </div>
+
+  <div class="board" cdkDropListGroup>
+    @for (column of columns; track column.status) {
+      <section class="column" [attr.data-tone]="column.tone">
+        <header class="column-head">
+          <span class="dot"></span>
+          <h2>{{ column.name }}</h2>
+          <span class="count">{{ byStatus()[column.status].length }}</span>
+          <button
+            type="button"
+            class="head-add"
+            [attr.aria-label]="'Ajouter une tâche dans ' + column.name"
+            (click)="addTask(column.status)"
+          >
+            <span class="material-symbols-outlined">add</span>
+          </button>
+        </header>
+
+        <div
+          class="tasks"
+          cdkDropList
+          [cdkDropListData]="byStatus()[column.status]"
+          (cdkDropListDropped)="drop($event, column.status)"
+        >
+          @for (task of byStatus()[column.status]; track task.id) {
+            <div class="task-wrapper" cdkDrag [cdkDragData]="task">
+              <app-task-card [task]="task" (opened)="open(task)" (removed)="remove(task)" />
+            </div>
+          } @empty {
+            <p class="empty">Aucune tâche</p>
+          }
+        </div>
+
+        <button type="button" class="add" (click)="addTask(column.status)">
+          <span class="material-symbols-outlined">add</span>
+          Ajouter une tâche
+        </button>
+      </section>
+    }
+  </div>
+}

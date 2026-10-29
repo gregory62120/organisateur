@@ -1,16 +1,135 @@
-<h1>Tableau de bord</h1>
-
-<div class="cards">
+<header class="page-head">
   <div>
-    <h2>
-      {{ total }}
-    </h2>
-    <p>Tâches</p>
+    <h1>Tableau de bord</h1>
+    <p class="subtitle">Voici un aperçu de l'avancement de vos tâches.</p>
   </div>
 
-  <div>
-    <h2>{{ progress }}%</h2>
+  <a routerLink="/kanban" class="btn-primary">
+    <span class="material-symbols-outlined">view_kanban</span>
+    Voir le Kanban
+  </a>
+</header>
 
-    <p>Avancement</p>
-  </div>
+@if (!storage.isOpen()) {
+  <p class="notice">
+    <span class="material-symbols-outlined">info</span>
+    Ouvrez un projet (bouton en haut à droite) pour afficher vos tâches.
+  </p>
+}
+
+<section class="stats">
+  @for (stat of stats(); track stat.label) {
+    <article class="card stat" [attr.data-tone]="stat.tone">
+      <span class="icon"
+        ><span class="material-symbols-outlined">{{ stat.icon }}</span></span
+      >
+      <div>
+        <p class="stat-label">{{ stat.label }}</p>
+        <p class="stat-value">{{ stat.value }}</p>
+      </div>
+    </article>
+  }
+</section>
+
+<div class="grid">
+  <section class="card chart-card">
+    <header>
+      <h2>Évolution des tâches</h2>
+      <span class="legend">
+        <span class="dot blue"></span> Créées <span class="dot green"></span> Terminées
+      </span>
+    </header>
+    <div class="line-wrap">
+      <canvas baseChart type="line" [data]="lineData()" [options]="lineOptions"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
+    <header><h2>Répartition par statut</h2></header>
+    <div class="donut-block">
+      <div class="donut">
+        <canvas
+          baseChart
+          type="doughnut"
+          [data]="doughnutData()"
+          [options]="doughnutOptions"
+        ></canvas>
+        <div class="donut-center">
+          <strong>{{ total() }}</strong>
+          <span>tâches</span>
+        </div>
+      </div>
+
+      <ul class="breakdown">
+        @for (item of statusBreakdown(); track item.status) {
+          <li>
+            <span class="dot" [style.background]="item.color"></span>
+            <span class="name">{{ item.label }}</span>
+            <span class="value">{{ item.value }} ({{ item.percent }}%)</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <header>
+      <h2>Avancement global</h2>
+      <strong class="percent">{{ progress() }}%</strong>
+    </header>
+    <div class="bar"><div class="bar-fill" [style.width.%]="progress()"></div></div>
+    <p class="hint">{{ done() }} tâche(s) terminée(s) sur {{ total() }}.</p>
+  </section>
+
+  <section class="card">
+    <header>
+      <h2>Tâches à venir</h2>
+      <a routerLink="/kanban" class="link">Voir tout</a>
+    </header>
+    <ul class="list">
+      @for (task of upcoming(); track task.id) {
+        <li>
+          <span
+            class="flag"
+            [attr.data-priority]="task.priority"
+            [title]="priorityLabels[task.priority]"
+          ></span>
+          <div class="grow">
+            <p class="item-title">{{ task.title }}</p>
+            <p class="item-meta" [class.late]="isOverdue(task)">
+              <span class="material-symbols-outlined">event</span>
+              {{ formatDueDate(task.dueDate) }}
+            </p>
+          </div>
+          @if (initials(task.assignedTo)) {
+            <span class="avatar" [title]="task.assignedTo">{{ initials(task.assignedTo) }}</span>
+          }
+        </li>
+      } @empty {
+        <li class="empty">Aucune tâche avec échéance.</li>
+      }
+    </ul>
+  </section>
+
+  <section class="card">
+    <header><h2>Dernières activités</h2></header>
+    <ul class="list">
+      @for (task of recent(); track task.id) {
+        <li>
+          <span
+            class="dot"
+            [style.background]="task.status === 'DONE' ? '#19b36b' : '#2f6bff'"
+          ></span>
+          <div class="grow">
+            <p class="item-title">{{ task.title }}</p>
+            <p class="item-meta">
+              {{ statusLabel(task.status) }} · {{ relativeTime(task.updatedAt) }}
+            </p>
+          </div>
+        </li>
+      } @empty {
+        <li class="empty">Aucune activité pour le moment.</li>
+      }
+    </ul>
+  </section>
 </div>
