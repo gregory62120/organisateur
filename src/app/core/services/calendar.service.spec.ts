@@ -360,4 +360,61 @@ describe('CalendarService', () => {
       expect(service.layoutTimed([])).toEqual([]);
     });
   });
+
+  describe('vue jour', () => {
+    it('construit une colonne pour le jour demandé', () => {
+      const byDay = service.byDay(
+        service.events([makeTask('a', { dueDate: '2026-10-15' })], today),
+      );
+
+      const [day, ...others] = service.dayColumn(today, byDay, today);
+
+      expect(others).toEqual([]);
+      expect(day.iso).toBe('2026-10-15');
+      expect(day.today).toBe(true);
+      expect(day.events.map((e) => e.key)).toEqual(['a']);
+    });
+
+    it('avance d’un jour, y compris au changement de mois', () => {
+      expect(service.shift(today, 'day', 1)).toEqual(new Date(2026, 9, 16));
+      expect(service.shift(new Date(2026, 9, 31), 'day', 1)).toEqual(new Date(2026, 10, 1));
+      expect(service.shift(today, 'day', -1)).toEqual(new Date(2026, 9, 14));
+    });
+
+    it('titre le jour avec son nom', () => {
+      expect(service.title(today, 'day')).toBe('jeudi 15 octobre 2026');
+    });
+  });
+
+  describe('assignLanes', () => {
+    const item = (id: string, start: number, end: number) => ({ id, start, end });
+
+    it('place des intervalles qui se chevauchent côte à côte', () => {
+      const lanes = service.assignLanes([item('a', 0, 60), item('b', 30, 90)]);
+
+      expect(lanes.map((l) => [l.item.id, l.lane, l.lanes])).toEqual([
+        ['a', 0, 2],
+        ['b', 1, 2],
+      ]);
+    });
+
+    it('réutilise une colonne libérée et isole les groupes distincts', () => {
+      const lanes = service.assignLanes([
+        item('d', 200, 260),
+        item('a', 0, 60),
+        item('b', 30, 90),
+        item('c', 60, 120),
+      ]);
+      const byId = Object.fromEntries(lanes.map((l) => [l.item.id, [l.lane, l.lanes]]));
+
+      expect(byId).toEqual({ a: [0, 2], b: [1, 2], c: [0, 2], d: [0, 1] });
+    });
+
+    it('gère aucun intervalle et un intervalle seul', () => {
+      expect(service.assignLanes([])).toEqual([]);
+      expect(service.assignLanes([item('a', 0, 10)])).toEqual([
+        { item: item('a', 0, 10), lane: 0, lanes: 1 },
+      ]);
+    });
+  });
 });

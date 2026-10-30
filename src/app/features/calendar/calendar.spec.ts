@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { Task } from '../../core/models/task.model';
@@ -7,6 +7,9 @@ import { EventService } from '../../core/services/event.service';
 import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
 import { TaskDialogService } from '../kanban/services/task-dialog.service';
+import { MusicPlayerService } from '../../core/services/music-player.service';
+import { MusicPanelComponent } from '../../shared/music/music-panel/music-panel';
+import { MusicLaneComponent } from './components/music-lane/music-lane';
 import { TaskCalendarEvent } from '../../core/services/calendar.service';
 import { CalendarComponent } from './calendar';
 import { EventDialogService } from './services/event-dialog.service';
@@ -33,6 +36,18 @@ describe('CalendarComponent', () => {
   const storage = { isOpen: signal(true), root: signal({ name: 'Projet' }) };
   const dialogs = { openTask: vi.fn(), openSubtask: vi.fn() };
   const eventDialogs = { create: vi.fn(), edit: vi.fn() };
+  const musicPlayer = { refreshClock: vi.fn() };
+
+  @Component({ selector: 'app-music-panel', template: '<p class="music-stub"></p>' })
+  class MusicPanelStub {
+    readonly day = input.required<Date>();
+  }
+
+  @Component({ selector: 'app-music-lane', template: '' })
+  class MusicLaneStub {
+    readonly day = input.required<Date>();
+    readonly hourPx = input.required<number>();
+  }
 
   let calendar: CalendarComponent;
 
@@ -44,7 +59,13 @@ describe('CalendarComponent', () => {
         { provide: TaskDialogService, useValue: dialogs },
         { provide: EventService, useValue: { eventsSignal: projectEvents.asReadonly() } },
         { provide: EventDialogService, useValue: eventDialogs },
+        { provide: MusicPlayerService, useValue: musicPlayer },
       ],
+    });
+    // Le panneau musique a ses propres tests : ici on le remplace par une coquille vide.
+    TestBed.overrideComponent(CalendarComponent, {
+      remove: { imports: [MusicPanelComponent, MusicLaneComponent] },
+      add: { imports: [MusicPanelStub, MusicLaneStub] },
     });
     return TestBed.createComponent(CalendarComponent);
   }
@@ -338,12 +359,12 @@ describe('CalendarComponent', () => {
       calendar.setView('week');
     });
 
-    const column = (iso: string) => calendar.weekColumns().find((c) => c.day.iso === iso)!;
+    const column = (iso: string) => calendar.gridColumns().find((c) => c.day.iso === iso)!;
 
     it('n’a pas de colonnes en vue mois', () => {
       calendar.setView('month');
 
-      expect(calendar.weekColumns()).toEqual([]);
+      expect(calendar.gridColumns()).toEqual([]);
     });
 
     it('range chaque jour : sans heure en haut, avec heure dans la grille', () => {
@@ -360,13 +381,13 @@ describe('CalendarComponent', () => {
 
     it('place les tâches toujours dans la bande « toute la journée »', () => {
       const allTasks = calendar
-        .weekColumns()
+        .gridColumns()
         .flatMap((c) => c.allDay.filter((e) => e.kind !== 'event'));
 
       expect(allTasks.length).toBeGreaterThan(0);
       expect(
         calendar
-          .weekColumns()
+          .gridColumns()
           .flatMap((c) => c.timed)
           .every((s) => s.event.kind === 'event'),
       ).toBe(true);
@@ -430,5 +451,61 @@ describe('CalendarComponent', () => {
 
     expect(eventDialogs.create).toHaveBeenLastCalledWith('2026-10-23', undefined, true);
     expect(calendar.selected()).toBe('2026-10-23');
+  });
+
+  describe('vue jour', () => {
+    beforeEach(() => calendar.setView('day'));
+
+    it('affiche le jour sélectionné dans une seule colonne, plus haute que celle de la semaine', () => {
+      expect(calendar.title()).toBe('jeudi 15 octobre 2026');
+      expect(calendar.gridColumns().map((c) => c.day.iso)).toEqual(['2026-10-15']);
+      expect(calendar.hourPx()).toBe(72);
+
+      calendar.setView('week');
+      expect(calendar.hourPx()).toBe(48);
+    });
+
+    it('s’ouvre sur le jour sélectionné et navigue de jour en jour', () => {
+      calendar.setView('month');
+      calendar.select('2026-10-21');
+      calendar.setView('day');
+      expect(calendar.gridColumns()[0].day.iso).toBe('2026-10-21');
+
+      calendar.move(1);
+      expect(calendar.gridColumns()[0].day.iso).toBe('2026-10-22');
+      calendar.move(-1);
+      calendar.move(-1);
+      expect(calendar.gridColumns()[0].day.iso).toBe('2026-10-20');
+    });
+
+    it('revient à la vue mois, sans colonnes horaires', () => {
+      calendar.setView('month');
+
+      expect(calendar.view()).toBe('month');
+      expect(calendar.gridColumns()).toEqual([]);
+    });
+
+    it('nomme le jour de la colonne', () => {
+      expect(calendar.weekdayLabel(calendar.gridColumns()[0].day)).toBe('Jeu');
+    });
+
+    it('affiche le panneau musique et la voie musicale uniquement en vue jour', async () => {
+      TestBed.resetTestingModule();
+      const fixture = setup();
+      fixture.componentInstance.setView('day');
+      await fixture.whenStable();
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelectorAll('.col-head')).toHaveLength(1);
+      expect(el.querySelector('.col-head .dow')?.textContent).toBe('Jeu');
+      expect(el.querySelector('app-music-panel')).not.toBeNull();
+      expect(el.querySelectorAll('app-music-lane')).toHaveLength(1);
+      expect(el.querySelector('.time-grid')?.getAttribute('style')).toContain('--cols: 1');
+
+      fixture.componentInstance.setView('week');
+      await fixture.whenStable();
+      expect(el.querySelector('app-music-panel')).toBeNull();
+      expect(el.querySelector('app-music-lane')).toBeNull();
+    });
   });
 });

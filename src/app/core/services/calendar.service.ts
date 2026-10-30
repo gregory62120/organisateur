@@ -5,7 +5,7 @@ import { Priority, Task, TaskStatus } from '../models/task.model';
 import { taskGroup } from '../models/task-state';
 import { GanttService } from './gantt.service';
 
-export type CalendarView = 'month' | 'week';
+export type CalendarView = 'month' | 'week' | 'day';
 
 interface BaseCalendarEvent {
   key: string;
@@ -151,33 +151,49 @@ export class CalendarService {
    * chacun sur sa colonne ; une fin absente vaut 1 h et une fin avant le début court jusqu'à minuit.
    */
   layoutTimed(events: ProjectCalendarEvent[]): TimedSlot[] {
-    const items = events
-      .map((event) => {
-        const start = Math.min(
-          this.minutes(event.projectEvent.startTime),
-          DAY_MINUTES - MIN_DURATION,
-        );
-        const rawEnd = event.projectEvent.endTime
-          ? this.minutes(event.projectEvent.endTime)
-          : start + DEFAULT_DURATION;
-        const end = rawEnd < start ? DAY_MINUTES : rawEnd;
-        return { event, start, end: Math.min(Math.max(end, start + MIN_DURATION), DAY_MINUTES) };
-      })
-      .sort((a, b) => a.start - b.start || a.end - b.end);
+    const items = events.map((event) => {
+      const start = Math.min(
+        this.minutes(event.projectEvent.startTime),
+        DAY_MINUTES - MIN_DURATION,
+      );
+      const rawEnd = event.projectEvent.endTime
+        ? this.minutes(event.projectEvent.endTime)
+        : start + DEFAULT_DURATION;
+      const end = rawEnd < start ? DAY_MINUTES : rawEnd;
+      return { event, start, end: Math.min(Math.max(end, start + MIN_DURATION), DAY_MINUTES) };
+    });
 
-    const slots: TimedSlot[] = [];
-    let cluster: TimedSlot[] = [];
+    return this.assignLanes(items).map(({ item, lane, lanes }) => ({
+      event: item.event,
+      top: (item.start / DAY_MINUTES) * 100,
+      height: ((item.end - item.start) / DAY_MINUTES) * 100,
+      lane,
+      lanes,
+    }));
+  }
+
+  /**
+   * Répartit des intervalles (en minutes) sur des colonnes : ceux qui se chevauchent sont côte à côte,
+   * une colonne libérée est réutilisée, et deux groupes distincts ne se partagent pas leur largeur.
+   * L'ordre du résultat est celui des débuts.
+   */
+  assignLanes<T extends { start: number; end: number }>(
+    items: T[],
+  ): { item: T; lane: number; lanes: number }[] {
+    const sorted = [...items].sort((a, b) => a.start - b.start || a.end - b.end);
+    const result: { item: T; lane: number; lanes: number }[] = [];
+    let cluster: typeof result = [];
     let laneEnds: number[] = [];
     let clusterEnd = 0;
 
     const close = () => {
-      cluster.forEach((slot) => (slot.lanes = laneEnds.length));
-      slots.push(...cluster);
+      cluster.forEach((entry) => (entry.lanes = laneEnds.length));
+      result.push(...cluster);
       cluster = [];
       laneEnds = [];
     };
 
-    for (const item of items) {
+    for (const item of sorted) {
       if (cluster.length && item.start >= clusterEnd) {
         close();
       }
@@ -187,16 +203,10 @@ export class CalendarService {
       }
       laneEnds[lane] = item.end;
       clusterEnd = cluster.length ? Math.max(clusterEnd, item.end) : item.end;
-      cluster.push({
-        event: item.event,
-        top: (item.start / DAY_MINUTES) * 100,
-        height: ((item.end - item.start) / DAY_MINUTES) * 100,
-        lane,
-        lanes: 1,
-      });
+      cluster.push({ item, lane, lanes: 1 });
     }
     close();
-    return slots;
+    return result;
   }
 
   /** Heures lisibles d'un évènement, ou `undefined` s'il dure toute la journée. */
@@ -261,16 +271,30 @@ export class CalendarService {
     return this.days(this.gantt.startOfWeek(cursor), 7, cursor.getMonth(), byDay, today);
   }
 
-  /** Date de départ après un déplacement d'un mois ou d'une semaine. */
+  /** Le jour de `cursor`, en une seule colonne (vue jour). */
+  dayColumn(cursor: Date, byDay: Map<string, CalendarEvent[]>, today = new Date()): CalendarDay[] {
+    return this.days(cursor, 1, cursor.getMonth(), byDay, today);
+  }
+
+  /** Date de départ après un déplacement d'un mois, d'une semaine ou d'un jour. */
   shift(cursor: Date, view: CalendarView, direction: -1 | 1): Date {
-    return view === 'month'
-      ? new Date(cursor.getFullYear(), cursor.getMonth() + direction, 1)
-      : this.gantt.addDays(cursor, 7 * direction);
+    if (view === 'month') {
+      return new Date(cursor.getFullYear(), cursor.getMonth() + direction, 1);
+    }
+    return this.gantt.addDays(cursor, (view === 'week' ? 7 : 1) * direction);
   }
 
   title(cursor: Date, view: CalendarView): string {
     if (view === 'month') {
       return cursor.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    }
+    if (view === 'day') {
+      return cursor.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
     }
     const start = this.gantt.startOfWeek(cursor);
     const end = this.gantt.addDays(start, 6);

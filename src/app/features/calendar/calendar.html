@@ -47,6 +47,9 @@
           <button type="button" [class.active]="view() === 'week'" (click)="setView('week')">
             Semaine
           </button>
+          <button type="button" [class.active]="view() === 'day'" (click)="setView('day')">
+            Jour
+          </button>
         </div>
       </div>
     </div>
@@ -156,10 +159,10 @@
           }
         </div>
       } @else {
-        <div class="time-grid" [style.--hour.px]="hourPx">
+        <div class="time-grid" [style.--hour.px]="hourPx()" [style.--cols]="gridColumns().length">
           <div class="tg-head">
             <span class="gutter"></span>
-            @for (col of weekColumns(); track col.day.iso) {
+            @for (col of gridColumns(); track col.day.iso) {
               <button
                 type="button"
                 class="col-head"
@@ -168,7 +171,7 @@
                 (click)="select(col.day.iso)"
                 (dblclick)="addEvent(col.day.iso)"
               >
-                <span class="dow">{{ weekdays[$index] }}</span>
+                <span class="dow">{{ weekdayLabel(col.day) }}</span>
                 <span class="number">{{ col.day.day }}</span>
               </button>
             }
@@ -176,7 +179,7 @@
 
           <div class="tg-allday">
             <span class="gutter">Journée</span>
-            @for (col of weekColumns(); track col.day.iso) {
+            @for (col of gridColumns(); track col.day.iso) {
               <div
                 class="allday-cell"
                 [class.selected]="col.day.iso === selected()"
@@ -213,32 +216,39 @@
               }
             </div>
 
-            @for (col of weekColumns(); track col.day.iso) {
+            @for (col of gridColumns(); track col.day.iso) {
               <div
                 class="tg-col"
                 [class.today]="col.day.today"
                 [class.weekend]="col.day.weekend"
                 [class.selected]="col.day.iso === selected()"
+                [class.with-music]="view() === 'day'"
                 (click)="select(col.day.iso)"
                 (dblclick)="addEventAt(col.day.iso, $event)"
               >
-                @for (slot of col.timed; track slot.event.key) {
-                  <button
-                    type="button"
-                    class="slot"
-                    [class.dense]="slot.lanes > 2"
-                    [attr.data-color]="slot.event.color"
-                    [style.top.%]="slot.top"
-                    [style.height.%]="slot.height"
-                    [style.left.%]="(slot.lane / slot.lanes) * 100"
-                    [style.width.%]="100 / slot.lanes"
-                    [title]="slot.event.title + ' · ' + slot.event.time"
-                    (click)="open(slot.event, $event)"
-                    (dblclick)="$event.stopPropagation()"
-                  >
-                    <span class="slot-title">{{ slot.event.title }}</span>
-                    <span class="slot-time">{{ slot.event.time }}</span>
-                  </button>
+                <div class="slots">
+                  @for (slot of col.timed; track slot.event.key) {
+                    <button
+                      type="button"
+                      class="slot"
+                      [class.dense]="slot.lanes > 2"
+                      [attr.data-color]="slot.event.color"
+                      [style.top.%]="slot.top"
+                      [style.height.%]="slot.height"
+                      [style.left.%]="(slot.lane / slot.lanes) * 100"
+                      [style.width.%]="100 / slot.lanes"
+                      [title]="slot.event.title + ' · ' + slot.event.time"
+                      (click)="open(slot.event, $event)"
+                      (dblclick)="$event.stopPropagation()"
+                    >
+                      <span class="slot-title">{{ slot.event.title }}</span>
+                      <span class="slot-time">{{ slot.event.time }}</span>
+                    </button>
+                  }
+                </div>
+
+                @if (view() === 'day') {
+                  <app-music-lane [day]="col.day.date" [hourPx]="hourPx()" />
                 }
 
                 @if (col.day.today) {
@@ -267,6 +277,10 @@
     </section>
 
     <aside class="side">
+      @if (view() === 'day') {
+        <app-music-panel [day]="cursor()" />
+      }
+
       <section class="card stats">
         <div class="stat late">
           <strong>{{ overdueCount() }}</strong>
