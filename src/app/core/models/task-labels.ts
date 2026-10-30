@@ -13,6 +13,14 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
   HIGH: 'Haute',
 };
 
+/** Couleur de chaque statut dans les graphiques. */
+export const STATUS_COLORS: Record<TaskStatus, string> = {
+  TODO: '#9aa8c7',
+  IN_PROGRESS: '#2f6bff',
+  VALIDATION: '#ff9f1a',
+  DONE: '#19b36b',
+};
+
 export const STATUSES = Object.keys(STATUS_LABELS) as TaskStatus[];
 
 export const PRIORITIES = Object.keys(PRIORITY_LABELS) as Priority[];

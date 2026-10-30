@@ -1,0 +1,151 @@
+<header class="head">
+  @if (editing()) {
+    <input
+      class="title"
+      aria-label="Titre du résumé"
+      placeholder="Titre du résumé"
+      [value]="title()"
+      (input)="title.set($any($event.target).value)"
+    />
+  } @else {
+    <h2 class="title read">{{ title() }}</h2>
+  }
+  <button type="button" class="icon-btn" title="Fermer" (click)="close()">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+</header>
+
+@if (editing()) {
+  <label class="label-field">
+    <span>Étiquette résumée</span>
+    <select [value]="label()" (change)="setLabel($any($event.target).value)">
+      <option value="" [selected]="!label()" disabled>Choisir une étiquette…</option>
+      @for (l of labels(); track l) {
+        <option [value]="l" [selected]="l === label()">{{ l }}</option>
+      }
+    </select>
+  </label>
+} @else {
+  <p class="meta">
+    <span class="chip">{{ label() }}</span>
+    Rédigé le {{ createdOn() }}
+    @if (modified()) {
+      · modifié le {{ updatedOn() }}
+    }
+  </p>
+}
+
+<section class="figures" aria-label="Chiffres au moment de la rédaction">
+  <div class="figure">
+    <strong>{{ stats().total }}</strong
+    ><span>Tâches</span>
+  </div>
+  <div class="figure green">
+    <strong>{{ stats().done }}</strong
+    ><span>Terminées ({{ stats().completionRate }} %)</span>
+  </div>
+  <div class="figure blue">
+    <strong>{{ stats().inProgress }}</strong
+    ><span>En cours</span>
+  </div>
+  <div class="figure orange">
+    <strong>{{ stats().validation }}</strong
+    ><span>En revue</span>
+  </div>
+  <div class="figure">
+    <strong>{{ stats().todo }}</strong
+    ><span>À faire</span>
+  </div>
+  <div class="figure red">
+    <strong>{{ stats().overdue }}</strong
+    ><span>En retard</span>
+  </div>
+  @if (editing()) {
+    <button type="button" class="refresh" (click)="refreshStats()">
+      <span class="material-symbols-outlined">refresh</span>
+      Actualiser les chiffres
+    </button>
+  }
+</section>
+
+@if (editing()) {
+  <div class="description">
+    <span class="label">Résumé</span>
+    <div class="editor">
+      <app-editor [content]="content()" (contentChange)="content.set($event)" />
+    </div>
+    <button type="button" class="insert" (click)="insertDraft()">
+      <span class="material-symbols-outlined">auto_awesome</span>
+      Ajouter un paragraphe avec les chiffres actuels
+    </button>
+  </div>
+
+  <fieldset class="chart-picker">
+    <legend>
+      Graphiques inclus
+      <span class="count">{{ charts().length }}/{{ chartOptions.length }}</span>
+    </legend>
+
+    @if (snapshot()) {
+      <div class="picker-actions">
+        <button type="button" class="link" (click)="setAllCharts(true)">Tout cocher</button>
+        <button type="button" class="link" (click)="setAllCharts(false)">Tout décocher</button>
+      </div>
+      <div class="choices">
+        @for (option of chartOptions; track option.key) {
+          <label class="choice">
+            <input
+              type="checkbox"
+              [checked]="charts().includes(option.key)"
+              (change)="toggleChart(option.key)"
+            />
+            {{ option.label }}
+          </label>
+        }
+      </div>
+      <p class="picker-note">
+        Graphiques figés au {{ snapshotDate() }} : « Actualiser les chiffres » les met à jour.
+      </p>
+    } @else {
+      <p class="picker-note">
+        Ce résumé n'a pas encore de graphiques. « Actualiser les chiffres » les ajoute.
+      </p>
+    }
+  </fieldset>
+} @else {
+  <article class="prose" [innerHTML]="content()"></article>
+  @if (!content().trim()) {
+    <p class="empty">Ce résumé n'a pas encore de texte.</p>
+  }
+
+  @if (hasCharts()) {
+    <section class="charts" aria-label="Graphiques">
+      <h3>
+        Graphiques <span class="as-of">au {{ snapshotDate() }}</span>
+      </h3>
+      <app-report-charts [snapshot]="snapshot()!" [only]="charts()" />
+    </section>
+  }
+}
+
+<footer class="actions">
+  @if (!isNew) {
+    <button type="button" class="btn-danger" (click)="remove()">
+      <span class="material-symbols-outlined">delete</span>
+      Supprimer
+    </button>
+  }
+  <span class="spacer"></span>
+  @if (editing()) {
+    <button type="button" class="btn-secondary" (click)="cancel()">Annuler</button>
+    <button type="button" class="btn-primary" [disabled]="!canSave()" (click)="save()">
+      {{ isNew ? 'Enregistrer le résumé' : 'Enregistrer' }}
+    </button>
+  } @else {
+    <button type="button" class="btn-secondary" (click)="close()">Fermer</button>
+    <button type="button" class="btn-primary" (click)="edit()">
+      <span class="material-symbols-outlined">edit</span>
+      Modifier
+    </button>
+  }
+</footer>

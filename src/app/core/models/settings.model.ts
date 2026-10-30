@@ -1,7 +1,5 @@
+/** Préférences de l'application, enregistrées dans le navigateur. */
 export interface Settings {
-  darkMode: boolean;
-
-  autoSave: boolean;
-
-  projectName: string;
+  /** Affiche la section « Rapports » dans le menu de gauche. */
+  reportsEnabled: boolean;
 }

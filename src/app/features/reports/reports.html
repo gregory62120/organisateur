@@ -1,0 +1,98 @@
+<header class="page-head">
+  <div>
+    <h1>Rapports</h1>
+    <p class="subtitle">
+      Analysez toutes les tâches d'une étiquette et rédigez des résumés
+      @if (storage.root(); as root) {
+        - {{ root.name }}
+      }
+    </p>
+  </div>
+</header>
+
+@if (!storage.isOpen()) {
+  <section class="empty-state">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h2>Aucun projet ouvert</h2>
+    <p>Ouvrez un dossier : les rapports sont construits à partir de <code>tasks.json</code>.</p>
+    <button type="button" class="btn-primary" (click)="openProject()">
+      <span class="material-symbols-outlined">create_new_folder</span>
+      Ouvrir un projet
+    </button>
+  </section>
+} @else {
+  <div class="tabs" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'analysis'"
+      [class.active]="tab() === 'analysis'"
+      (click)="setTab('analysis')"
+    >
+      <span class="material-symbols-outlined">monitoring</span>
+      Analyse
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'summaries'"
+      [class.active]="tab() === 'summaries'"
+      (click)="setTab('summaries')"
+    >
+      <span class="material-symbols-outlined">edit_note</span>
+      Résumés
+    </button>
+  </div>
+
+  @if (tab() === 'analysis') {
+    <div class="toolbar">
+      <label class="picker">
+        <span>Étiquette</span>
+        <select
+          aria-label="Étiquette à analyser"
+          [value]="label()"
+          (change)="label.set($any($event.target).value)"
+        >
+          <option value="" [selected]="!label()">Choisir une étiquette…</option>
+          @for (item of labels(); track item.label) {
+            <option [value]="item.label" [selected]="item.label === label()">
+              {{ item.label }} ({{ item.count }})
+            </option>
+          }
+        </select>
+      </label>
+
+      <button type="button" class="btn-primary" [disabled]="!label()" (click)="writeSummary()">
+        <span class="material-symbols-outlined">edit_note</span>
+        Rédiger un résumé
+      </button>
+    </div>
+
+    @if (!label()) {
+      <section class="empty">
+        <span class="material-symbols-outlined">label</span>
+        @if (labels().length) {
+          <h2>Choisissez une étiquette</h2>
+          <p>Le rapport analysera toutes les tâches qui la portent.</p>
+          <div class="chips">
+            @for (item of labels(); track item.label) {
+              <button type="button" class="chip" (click)="label.set(item.label)">
+                {{ item.label }} <span>{{ item.count }}</span>
+              </button>
+            }
+          </div>
+        } @else {
+          <h2>Aucune étiquette</h2>
+          <p>
+            Ajoutez des étiquettes à vos tâches (dans le formulaire d'une tâche) pour pouvoir les
+            analyser ici.
+          </p>
+        }
+      </section>
+    } @else {
+      <app-report-analysis [tasks]="labelTasks()" [label]="label()" />
+    }
+  } @else {
+    <app-report-summaries [defaultLabel]="label()" />
+  }
+}

@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SummaryService } from '../../core/services/summary.service';
 import { MusicPlanService } from '../../core/services/music-plan.service';
 import { MusicService } from '../../core/services/music.service';
 import { EventService } from '../../core/services/event.service';
@@ -25,13 +26,16 @@ export class MainLayout {
 
   private readonly musicPlanService = inject(MusicPlanService);
 
-  /** Première erreur de lecture / écriture, qu'elle vienne de tasks.json, events.json, music.json ou music-plan.json. */
+  private readonly summaryService = inject(SummaryService);
+
+  /** Première erreur de lecture / écriture, qu'elle vienne de tasks.json, events.json, music.json, music-plan.json ou summaries.json. */
   readonly error = computed(
     () =>
       this.taskService.error() ??
       this.eventService.error() ??
       this.musicService.error() ??
-      this.musicPlanService.error(),
+      this.musicPlanService.error() ??
+      this.summaryService.error(),
   );
 
   readonly saving = computed(
@@ -39,7 +43,8 @@ export class MainLayout {
       this.taskService.saving() ||
       this.eventService.saving() ||
       this.musicService.saving() ||
-      this.musicPlanService.saving(),
+      this.musicPlanService.saving() ||
+      this.summaryService.saving(),
   );
 
   async openProject(): Promise<void> {

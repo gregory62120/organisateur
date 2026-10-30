@@ -1,6 +1,7 @@
 import { effect, inject, Injectable, untracked } from '@angular/core';
 
 import { Task } from '../models/task.model';
+import { trackCompletion } from '../models/task-state';
 import { JsonFileStore } from './json-file-store';
 import { StorageService } from './storage.service';
 
@@ -31,12 +32,15 @@ export class TaskService {
   }
 
   add(task: Task) {
-    return this.store.update((list) => [...list, task]);
+    return this.store.update((list) => [...list, trackCompletion(undefined, task)]);
   }
 
   update(task: Task) {
-    const updated = { ...task, updatedAt: new Date().toISOString() };
-    return this.store.update((list) => list.map((t) => (t.id === task.id ? updated : t)));
+    return this.store.update((list) =>
+      list.map((t) =>
+        t.id === task.id ? trackCompletion(t, { ...task, updatedAt: new Date().toISOString() }) : t,
+      ),
+    );
   }
 
   /** Remplace les tâches en mémoire, sans écrire (utilisé après une synchronisation entrante). */
@@ -50,7 +54,9 @@ export class TaskService {
 
   move(id: string, status: Task['status']) {
     return this.store.update((list) =>
-      list.map((t) => (t.id === id ? { ...t, status, updatedAt: new Date().toISOString() } : t)),
+      list.map((t) =>
+        t.id === id ? trackCompletion(t, { ...t, status, updatedAt: new Date().toISOString() }) : t,
+      ),
     );
   }
 
@@ -67,11 +73,11 @@ export class TaskService {
 
     const others = list.filter((t) => t.id !== id);
     const column = others.filter((t) => t.status === status);
-    const moved: Task = {
+    const moved = trackCompletion(task, {
       ...task,
       status,
       updatedAt: task.status === status ? task.updatedAt : new Date().toISOString(),
-    };
+    });
 
     let insertAt = others.length;
     if (index < column.length) {

@@ -1,0 +1,144 @@
+@use '../../shared/styles/page' as page;
+
+:host {
+  display: block;
+}
+
+@include page.page-head;
+@include page.btn-primary;
+@include page.empty-state;
+
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  border: 1px solid var(--tf-border);
+  border-radius: 12px;
+  background: var(--tf-surface);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--tf-muted);
+    cursor: pointer;
+
+    .material-symbols-outlined {
+      font-size: 20px;
+    }
+
+    &.active {
+      background: var(--tf-primary);
+      color: #fff;
+    }
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tf-muted);
+
+  select {
+    min-width: 280px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--tf-border);
+    border-radius: 10px;
+    background: var(--tf-surface);
+    font: inherit;
+    font-size: 14px;
+    color: var(--tf-text);
+    cursor: pointer;
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 560px;
+  margin: 40px auto;
+  padding: 36px 28px;
+  border: 1px dashed var(--tf-border);
+  border-radius: var(--tf-radius);
+  text-align: center;
+
+  > .material-symbols-outlined {
+    padding: 12px;
+    border-radius: 50%;
+    background: var(--tf-primary-soft);
+    color: var(--tf-primary);
+    font-size: 30px;
+  }
+
+  h2 {
+    margin: 8px 0 0;
+    font-size: 17px;
+    color: var(--tf-text);
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--tf-muted);
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--tf-border);
+  border-radius: 999px;
+  background: var(--tf-surface);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tf-text);
+  cursor: pointer;
+
+  span {
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--tf-primary-soft);
+    font-size: 11px;
+    color: var(--tf-primary);
+  }
+
+  &:hover {
+    border-color: var(--tf-primary);
+    color: var(--tf-primary);
+  }
+}
