@@ -13,12 +13,12 @@
       </div>
 
       <div class="topbar-actions">
-        @if (taskService.error(); as error) {
+        @if (error(); as error) {
           <span class="status status-error" [title]="error">
             <span class="material-symbols-outlined">error</span>
             Erreur d'enregistrement
           </span>
-        } @else if (taskService.saving()) {
+        } @else if (saving()) {
           <span class="status">
             <span class="material-symbols-outlined spin">sync</span>
             Enregistrement…
@@ -42,3 +42,5 @@
     </main>
   </div>
 </div>
+
+<app-music-mini-player />

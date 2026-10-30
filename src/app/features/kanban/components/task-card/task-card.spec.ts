@@ -96,4 +96,125 @@ describe('TaskCardComponent', () => {
     expect(removed).toHaveBeenCalledTimes(1);
     expect(opened).not.toHaveBeenCalled();
   });
+
+  describe('sous-tâches', () => {
+    it('liste les sous-tâches avec leur état et la progression', async () => {
+      await render();
+
+      const items = [...el.querySelectorAll<HTMLLIElement>('.subtasks li')];
+      expect(items).toHaveLength(2);
+      expect(items[0].classList.contains('done')).toBe(true);
+      expect(items[1].classList.contains('done')).toBe(false);
+      expect(el.querySelector('.subtasks-count')?.textContent).toBe('1/2');
+      expect(el.querySelector<HTMLElement>('.subtasks-bar span')!.style.width).toBe('50%');
+    });
+
+    it('n’affiche rien sans sous-tâche', async () => {
+      await render({ ...baseTask, checklist: [] });
+
+      expect(el.querySelector('.subtasks')).toBeNull();
+    });
+
+    it('émet l’identifiant coché sans ouvrir la carte', async () => {
+      await render();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.subtaskToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      el.querySelectorAll<HTMLInputElement>('.subtasks input')[1].click();
+
+      expect(toggled).toHaveBeenCalledWith('b');
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('émet l’identifiant au clic sur le libellé, sans ouvrir la carte ni cocher', async () => {
+      await render();
+      const subtaskOpened = vi.fn();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.subtaskOpened.subscribe(subtaskOpened);
+      fixture.componentInstance.subtaskToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      el.querySelectorAll<HTMLElement>('.subtask-open')[1].click();
+
+      expect(subtaskOpened).toHaveBeenCalledWith('b');
+      expect(toggled).not.toHaveBeenCalled();
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('se replie et se déplie sans ouvrir la carte', async () => {
+      await render();
+      const opened = vi.fn();
+      fixture.componentInstance.opened.subscribe(opened);
+
+      el.querySelector<HTMLElement>('.subtasks-toggle')!.click();
+      await fixture.whenStable();
+      expect(el.querySelectorAll('.subtasks li')).toHaveLength(0);
+
+      el.querySelector<HTMLElement>('.subtasks-toggle')!.click();
+      await fixture.whenStable();
+      expect(el.querySelectorAll('.subtasks li')).toHaveLength(2);
+      expect(opened).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('sprint', () => {
+    it('propose de masquer une tâche du sprint sans ouvrir la carte', async () => {
+      await render();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.sprintToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      const button = el.querySelector<HTMLElement>('.sprint')!;
+      expect(button.title).toContain('Masquer');
+      expect(el.querySelector('.status-chip')).toBeNull();
+      button.click();
+
+      expect(toggled).toHaveBeenCalledTimes(1);
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('propose d’ajouter au sprint une tâche masquée et affiche son statut', async () => {
+      fixture = TestBed.createComponent(TaskCardComponent);
+      fixture.componentRef.setInput('task', baseTask);
+      fixture.componentRef.setInput('group', 'hidden');
+      await fixture.whenStable();
+      el = fixture.nativeElement;
+
+      expect(el.querySelector<HTMLElement>('.sprint')!.title).toContain('Ajouter au sprint');
+      expect(el.querySelector('.status-chip')?.textContent).toContain('À faire');
+    });
+  });
+
+  describe('archivage', () => {
+    it('propose d’archiver sans ouvrir la carte', async () => {
+      await render();
+      const toggled = vi.fn();
+      const opened = vi.fn();
+      fixture.componentInstance.archiveToggled.subscribe(toggled);
+      fixture.componentInstance.opened.subscribe(opened);
+
+      const button = el.querySelector<HTMLElement>('.archive')!;
+      expect(button.title).toBe('Archiver');
+      button.click();
+
+      expect(toggled).toHaveBeenCalledTimes(1);
+      expect(opened).not.toHaveBeenCalled();
+    });
+
+    it('propose de restaurer une tâche archivée, sans bouton de sprint, avec son statut', async () => {
+      fixture = TestBed.createComponent(TaskCardComponent);
+      fixture.componentRef.setInput('task', baseTask);
+      fixture.componentRef.setInput('group', 'archived');
+      await fixture.whenStable();
+      el = fixture.nativeElement;
+
+      expect(el.querySelector<HTMLElement>('.archive')!.title).toBe('Restaurer');
+      expect(el.querySelector('.sprint')).toBeNull();
+      expect(el.querySelector('.status-chip')).not.toBeNull();
+    });
+  });
 });

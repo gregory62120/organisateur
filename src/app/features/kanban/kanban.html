@@ -2,7 +2,10 @@
   <div>
     <h1>Projets</h1>
     <p class="subtitle">
-      Tableau Kanban @if (projectName()) { - {{ projectName() }} }
+      Tableau Kanban
+      @if (projectName()) {
+        - {{ projectName() }}
+      }
     </p>
   </div>
 
@@ -108,7 +111,15 @@
         >
           @for (task of byStatus()[column.status]; track task.id) {
             <div class="task-wrapper" cdkDrag [cdkDragData]="task">
-              <app-task-card [task]="task" (opened)="open(task)" (removed)="remove(task)" />
+              <app-task-card
+                [task]="task"
+                (opened)="open(task)"
+                (removed)="remove(task)"
+                (sprintToggled)="toggleSprint(task)"
+                (archiveToggled)="toggleArchive(task)"
+                (subtaskToggled)="toggleSubtask(task, $event)"
+                (subtaskOpened)="openSubtask(task, $event)"
+              />
             </div>
           } @empty {
             <p class="empty">Aucune tâche</p>
@@ -122,4 +133,66 @@
       </section>
     }
   </div>
+  <app-collapsible-section
+    class="boxed"
+    title="Tâches masquées (hors sprint)"
+    [count]="hiddenCount()"
+    [(open)]="hiddenOpen"
+  >
+    @if (hiddenOpen()) {
+      <div class="card-list">
+        @for (task of hiddenTasks(); track task.id) {
+          <app-task-card
+            [task]="task"
+            group="hidden"
+            (opened)="open(task)"
+            (removed)="remove(task)"
+            (sprintToggled)="toggleSprint(task)"
+            (archiveToggled)="toggleArchive(task)"
+            (subtaskToggled)="toggleSubtask(task, $event)"
+            (subtaskOpened)="openSubtask(task, $event)"
+          />
+        } @empty {
+          <p class="empty">
+            {{
+              hiddenCount()
+                ? 'Aucune tâche masquée ne correspond aux filtres.'
+                : 'Aucune tâche masquée. Utilisez l’œil d’une carte ou du Gantt pour la sortir du sprint.'
+            }}
+          </p>
+        }
+      </div>
+    }
+  </app-collapsible-section>
+
+  <app-collapsible-section
+    class="boxed"
+    title="Tâches archivées"
+    [count]="archivedCount()"
+    [(open)]="archivedOpen"
+  >
+    @if (archivedOpen()) {
+      <div class="card-list">
+        @for (task of archivedTasks(); track task.id) {
+          <app-task-card
+            [task]="task"
+            group="archived"
+            (opened)="open(task)"
+            (removed)="remove(task)"
+            (archiveToggled)="toggleArchive(task)"
+            (subtaskToggled)="toggleSubtask(task, $event)"
+            (subtaskOpened)="openSubtask(task, $event)"
+          />
+        } @empty {
+          <p class="empty">
+            {{
+              archivedCount()
+                ? 'Aucune tâche archivée ne correspond aux filtres.'
+                : 'Aucune tâche archivée. Utilisez le bouton d’archivage d’une carte.'
+            }}
+          </p>
+        }
+      </div>
+    }
+  </app-collapsible-section>
 }

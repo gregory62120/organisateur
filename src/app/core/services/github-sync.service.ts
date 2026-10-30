@@ -1,5 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DocumentService } from './document.service';
+import { EVENTS_FILE, EventService } from './event.service';
+import { MUSIC_PLAN_FILE, MusicPlanService } from './music-plan.service';
+import { MUSIC_FILE, MusicService } from './music.service';
 import { StorageService } from './storage.service';
 import { TaskService } from './task.service';
 
@@ -16,6 +19,22 @@ export class GithubSyncService {
   private readonly storage = inject(StorageService);
   private readonly documentService = inject(DocumentService);
   private readonly taskService = inject(TaskService);
+  private readonly eventService = inject(EventService);
+  private readonly musicService = inject(MusicService);
+  private readonly musicPlanService = inject(MusicPlanService);
+
+  /**
+   * Fichiers qui n'existent qu'une fois utilisés (évènements, musique, planification) : ils sont synchronisés
+   * s'ils sont présents, et leur absence n'empêche pas la synchronisation.
+   */
+  private readonly optionalFiles: { path: string; apply: (json: string) => void }[] = [
+    { path: EVENTS_FILE, apply: (json) => this.eventService.updateEvents(JSON.parse(json)) },
+    { path: MUSIC_FILE, apply: (json) => this.musicService.updateTracks(JSON.parse(json)) },
+    {
+      path: MUSIC_PLAN_FILE,
+      apply: (json) => this.musicPlanService.updateSlots(JSON.parse(json)),
+    },
+  ];
 
   private readonly syncingState = signal(false);
   readonly syncing = this.syncingState.asReadonly();
@@ -50,9 +69,10 @@ export class GithubSyncService {
     try {
       const { owner, repo, branch } = this.config;
 
-      const [tasks, documents] = await Promise.all([
+      const [tasks, documents, optional] = await Promise.all([
         this.storage.read('tasks.json'),
         this.storage.read('document.json'),
+        Promise.all(this.optionalFiles.map((file) => this.readOptional(file.path))),
       ]);
 
       if (tasks === undefined) {
@@ -96,6 +116,15 @@ export class GithubSyncService {
 
       const documentsBlob = await this.createBlob(owner, repo, documents, token);
 
+      const optionalBlobs = await Promise.all(
+        this.optionalFiles.map(async (file, i) => {
+          const content = optional[i];
+          return content === undefined
+            ? null
+            : { path: file.path, blob: await this.createBlob(owner, repo, content, token) };
+        }),
+      );
+
       /*
        * 4. Création d'un tree contenant les 2 fichiers
        */
@@ -119,6 +148,9 @@ export class GithubSyncService {
                 type: 'blob',
                 sha: documentsBlob.sha,
               },
+              ...optionalBlobs.flatMap((item) =>
+                item ? [{ path: item.path, mode: '100644', type: 'blob', sha: item.blob.sha }] : [],
+              ),
             ],
           }),
         },
@@ -195,9 +227,33 @@ export class GithubSyncService {
       this.documentService.updateDocuments(docs);
       this.taskService.updateTask(JSON.parse(tasks));
 
+      // Un dépôt qui n'a jamais reçu ces fichiers reste valide : on garde alors les données locales.
+      await Promise.all(
+        this.optionalFiles.map(async (file) => {
+          const content = await this.getFile(owner, repo, branch, file.path, headers).catch(
+            () => null,
+          );
+          if (content) {
+            file.apply(content);
+          }
+        }),
+      );
+
       this.lastSyncState.set(new Date());
     } finally {
       this.pullingState.set(false);
+    }
+  }
+
+  /** Contenu d'un fichier du projet, ou `undefined` s'il n'existe pas encore. */
+  private async readOptional(path: string): Promise<string | undefined> {
+    try {
+      return await this.storage.read(path);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'NotFoundError') {
+        return undefined;
+      }
+      throw error;
     }
   }
 

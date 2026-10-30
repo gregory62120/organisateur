@@ -1,7 +1,7 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Priority, Task, TaskStatus } from '../../../../core/models/task.model';
+import { ChecklistItem, Priority, Task, TaskStatus } from '../../../../core/models/task.model';
 import {
   PRIORITIES,
   PRIORITY_LABELS,
@@ -49,6 +49,8 @@ export class TaskDialogComponent {
 
   readonly priority = signal<Priority>(this.initial.priority);
 
+  readonly startDate = signal(this.initial.startDate ?? '');
+
   readonly dueDate = signal(this.initial.dueDate ?? '');
 
   readonly assignedTo = signal(this.initial.assignedTo ?? '');
@@ -58,6 +60,18 @@ export class TaskDialogComponent {
   readonly content = signal(this.initial.description ?? '');
 
   readonly newTag = signal('');
+
+  readonly checklist = signal<ChecklistItem[]>(
+    (this.initial.checklist ?? []).map((item) => ({ ...item })),
+  );
+
+  readonly newSubtask = signal('');
+
+  readonly subtasksDone = computed(() => this.checklist().filter((i) => i.completed).length);
+
+  readonly subtasksProgress = computed(() =>
+    this.checklist().length ? Math.round((this.subtasksDone() / this.checklist().length) * 100) : 0,
+  );
 
   updateContent(content: string) {
     this.content.set(content);
@@ -75,17 +89,45 @@ export class TaskDialogComponent {
     this.tags.update((tags) => tags.filter((t) => t !== tag));
   }
 
+  addSubtask() {
+    const label = this.newSubtask().trim();
+    if (label) {
+      this.checklist.update((items) => [
+        ...items,
+        { id: crypto.randomUUID(), label, completed: false },
+      ]);
+    }
+    this.newSubtask.set('');
+  }
+
+  toggleSubtask(id: string) {
+    this.checklist.update((items) =>
+      items.map((i) => (i.id === id ? { ...i, completed: !i.completed } : i)),
+    );
+  }
+
+  renameSubtask(id: string, label: string) {
+    this.checklist.update((items) => items.map((i) => (i.id === id ? { ...i, label } : i)));
+  }
+
+  removeSubtask(id: string) {
+    this.checklist.update((items) => items.filter((i) => i.id !== id));
+  }
+
   save() {
     this.addTag();
+    this.addSubtask();
 
     const task: Task = {
       ...this.initial,
       title: this.title().trim() || 'Sans titre',
       status: this.status(),
       priority: this.priority(),
+      startDate: this.startDate() || undefined,
       dueDate: this.dueDate() || undefined,
       assignedTo: this.assignedTo().trim() || undefined,
       tags: this.tags(),
+      checklist: this.checklist().filter((i) => i.label.trim()),
       description: this.content() ?? '',
     };
 

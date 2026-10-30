@@ -1,0 +1,93 @@
+<header class="head">
+  <input
+    class="title"
+    aria-label="Titre de l'évènement"
+    placeholder="Titre de l'évènement"
+    [value]="title()"
+    (input)="title.set($any($event.target).value)"
+    (keydown.enter)="save()"
+  />
+  <button type="button" class="icon-btn" title="Fermer" (click)="close()">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+</header>
+
+<div class="fields">
+  <label>
+    <span>Date</span>
+    <input type="date" [value]="date()" (input)="date.set($any($event.target).value)" />
+  </label>
+
+  <label>
+    <span>Début</span>
+    <input
+      type="time"
+      aria-label="Heure de début"
+      [disabled]="allDay()"
+      [value]="startTime()"
+      (input)="startTime.set($any($event.target).value)"
+    />
+  </label>
+
+  <label>
+    <span>Fin</span>
+    <input
+      type="time"
+      aria-label="Heure de fin"
+      [disabled]="allDay()"
+      [value]="endTime()"
+      (input)="endTime.set($any($event.target).value)"
+    />
+  </label>
+</div>
+
+<label class="toggle">
+  <input type="checkbox" [checked]="allDay()" (change)="setAllDay($any($event.target).checked)" />
+  Toute la journée (sans horaire)
+</label>
+
+@if (endBeforeStart()) {
+  <p class="hint">La fin est avant le début : elle sera ramenée à l'heure de début.</p>
+}
+
+<div class="color-field">
+  <span class="label">Couleur</span>
+  <div class="swatches" role="radiogroup" aria-label="Couleur">
+    @for (c of colors; track c) {
+      <button
+        type="button"
+        class="swatch"
+        role="radio"
+        [attr.data-color]="c"
+        [class.selected]="c === color()"
+        [attr.aria-checked]="c === color()"
+        [title]="colorLabels[c]"
+        (click)="color.set(c)"
+      ></button>
+    }
+  </div>
+</div>
+
+<label class="description-field">
+  <span>Description</span>
+  <textarea
+    rows="4"
+    placeholder="Ordre du jour, lien de visio, lieu…"
+    [value]="description()"
+    (input)="description.set($any($event.target).value)"
+  ></textarea>
+</label>
+
+<footer class="actions">
+  @if (!isNew) {
+    <button type="button" class="btn-danger" (click)="remove()">
+      <span class="material-symbols-outlined">delete</span>
+      Supprimer
+    </button>
+  }
+  <span class="spacer"></span>
+  <button type="button" class="btn-secondary" (click)="close()">Annuler</button>
+  <button type="button" class="btn-primary" [disabled]="!canSave()" (click)="save()">
+    {{ isNew ? "Créer l'évènement" : 'Enregistrer' }}
+  </button>
+</footer>

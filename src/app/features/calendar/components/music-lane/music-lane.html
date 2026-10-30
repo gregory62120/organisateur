@@ -1,0 +1,68 @@
+<div
+  class="plan"
+  [class.dropping]="dropping()"
+  aria-label="Musiques planifiées"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+>
+  @for (block of planBlocks(); track block.slot.id) {
+    <div
+      class="block"
+      tabindex="0"
+      role="group"
+      [class.dragging]="draggingId() === block.slot.id"
+      [style.top.%]="block.top"
+      [style.height.%]="block.height"
+      [style.left.%]="(block.lane / block.lanes) * 100"
+      [style.width.%]="100 / block.lanes"
+      [attr.aria-label]="block.track.title + ', ' + block.time"
+      [title]="
+        block.track.title + ' · ' + block.time + ' (glisser pour déplacer, Suppr pour retirer)'
+      "
+      (pointerdown)="startDrag($event, block)"
+      (pointermove)="moveDrag($event)"
+      (pointerup)="endDrag(block)"
+      (pointercancel)="cancelDrag()"
+      (keydown)="onKey($event, block)"
+    >
+      @if (block.labelled) {
+        <span class="material-symbols-outlined note">music_note</span>
+        <span class="title">{{ block.track.title }}</span>
+      }
+      @if (block.actions) {
+        <span class="actions">
+          <button
+            type="button"
+            title="Écouter maintenant"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="play(block)"
+          >
+            <span class="material-symbols-outlined">play_arrow</span>
+          </button>
+          <button
+            type="button"
+            title="Retirer du calendrier"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="remove(block)"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </span>
+      }
+    </div>
+  }
+</div>
+
+<div class="live" aria-label="Lecture en cours">
+  @for (block of liveBlocks(); track block.key) {
+    <div
+      class="seg"
+      [attr.data-status]="block.status"
+      [class.unknown]="!block.durationKnown"
+      [style.top.%]="block.top"
+      [style.height.%]="block.height"
+      [title]="block.title + ' · ' + block.time"
+    ></div>
+  }
+</div>

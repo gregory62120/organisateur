@@ -72,7 +72,7 @@
 }
 
 .config-checkbox:checked + .config-checkmark:after {
-  content: "";
+  content: '';
   position: absolute;
   left: 5px;
   top: 1px;
@@ -113,7 +113,7 @@
 }
 
 .config-connectivity-line::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 50%;

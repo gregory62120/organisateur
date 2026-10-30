@@ -6,6 +6,12 @@ export interface ChecklistItem {
   label: string;
 
   completed: boolean;
+
+  description?: string;
+
+  assignedTo?: string;
+
+  dueDate?: string;
 }
 
 export interface Comment {
@@ -46,6 +52,14 @@ export interface Task {
   comments: Comment[];
 
   attachments: string[];
+
+  /** Affichée dans le Kanban tant que la valeur n'est pas `false`. */
+  showInKanban?: boolean;
+
+  /** Une tâche archivée disparaît du Kanban et du Gantt, sauf de leur section « Archivées ». */
+  archived?: boolean;
+
+  archivedAt?: string;
 
   createdAt: string;
 

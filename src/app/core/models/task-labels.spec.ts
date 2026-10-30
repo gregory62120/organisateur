@@ -3,6 +3,7 @@ import {
   avatarColor,
   compareTasks,
   formatDueDate,
+  formatShortDate,
   initials,
   isOverdue,
   tagTone,
@@ -107,6 +108,23 @@ describe('task-labels', () => {
     it('un même responsable a toujours la même couleur d’avatar', () => {
       expect(avatarColor('Sophie Martin')).toBe(avatarColor('Sophie Martin'));
       expect(avatarColor(undefined)).toMatch(/^#/);
+    });
+  });
+
+  describe('formatShortDate', () => {
+    const now = new Date(2026, 9, 29);
+
+    it('omet l’année en cours', () => {
+      expect(formatShortDate('2026-10-17', now)).toBe('17 oct.');
+    });
+
+    it('ajoute l’année quand elle diffère', () => {
+      expect(formatShortDate('2027-01-05', now)).toContain('2027');
+    });
+
+    it('retourne une chaîne vide sans date valide', () => {
+      expect(formatShortDate(undefined, now)).toBe('');
+      expect(formatShortDate('abc', now)).toBe('');
     });
   });
 });
