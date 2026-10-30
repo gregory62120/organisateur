@@ -79,8 +79,12 @@
           <span class="c-date">Début</span>
           <span class="c-date">Fin</span>
           <span class="c-status">Statut</span>
-          <span class="c-kanban" title="Dans le sprint (Kanban)">Sprint</span>
-          <span class="c-kanban" title="Archiver">Archive</span>
+          <span class="c-kanban" title="Dans le sprint (Kanban)"
+            ><span class="material-symbols-outlined">visibility</span></span
+          >
+          <span class="c-kanban" title="Archiver"
+            ><span class="material-symbols-outlined">archive</span></span
+          >
         </div>
         <div class="timeline head-timeline">
           <div class="months">
@@ -238,7 +242,9 @@
             (pointerup)="endDrag(row)"
             (pointercancel)="cancelDrag()"
           ></span>
-          <span class="text">{{ row.task.title }}</span>
+          @if (!row.narrow) {
+            <span class="text">{{ row.task.title }}</span>
+          }
           <span
             class="handle end"
             (pointerdown)="startDrag($event, row, 'end')"
@@ -247,6 +253,11 @@
             (pointercancel)="cancelDrag()"
           ></span>
         </div>
+        @if (row.narrow) {
+          <span class="outside-label" [style.left.px]="row.left + row.width + 8">
+            {{ row.task.title }}
+          </span>
+        }
       } @else {
         <span class="unscheduled">Non planifiée : ajoutez un début ou une échéance</span>
       }

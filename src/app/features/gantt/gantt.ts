@@ -1,16 +1,17 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
-  afterNextRender,
   computed,
+  effect,
   ElementRef,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 
 import { Task, TaskStatus } from '../../core/models/task.model';
-import { STATUS_LABELS, STATUSES, formatDueDate, isOverdue } from '../../core/models/task-labels';
+import { STATUS_LABELS, STATUSES, formatShortDate, isOverdue } from '../../core/models/task-labels';
 import {
   countByGroup,
   TaskGroup,
@@ -31,6 +32,9 @@ import { TaskService } from '../../core/services/task.service';
 import { CollapsibleSectionComponent } from '../../shared/collapsible-section/collapsible-section';
 import { TaskDialogService } from '../kanban/services/task-dialog.service';
 
+/** Largeur (px) en dessous de laquelle le titre sort de la barre. */
+const NARROW_BAR = 130;
+
 type DragMode = 'move' | 'start' | 'end';
 
 interface Drag {
@@ -45,6 +49,8 @@ export interface GanttRow {
   span: TaskSpan | null;
   left: number;
   width: number;
+  /** Barre trop courte pour contenir son titre : il s'affiche à sa droite. */
+  narrow: boolean;
   progress: number;
   overdue: boolean;
   group: TaskGroup;
@@ -68,6 +74,8 @@ export class GanttComponent {
   taskService = inject(TaskService);
 
   storage = inject(StorageService);
+
+  private readonly hasTasks = computed(() => this.taskService.tasksSignal().length > 0);
 
   private scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
@@ -152,12 +160,13 @@ export class GanttComponent {
           span,
           left: span ? this.gantt.diffDays(range.start, span.start) * width : 0,
           width: span ? (this.gantt.diffDays(span.start, span.end) + 1) * width : 0,
+          narrow: !!span && (this.gantt.diffDays(span.start, span.end) + 1) * width < NARROW_BAR,
           progress: this.gantt.progress(task),
           overdue: isOverdue(task),
           group: taskGroup(task),
           statusLabel: STATUS_LABELS[task.status],
-          startLabel: formatDueDate(span ? this.gantt.toIso(span.start) : ''),
-          endLabel: formatDueDate(span ? this.gantt.toIso(span.end) : ''),
+          startLabel: formatShortDate(span ? this.gantt.toIso(span.start) : ''),
+          endLabel: formatShortDate(span ? this.gantt.toIso(span.end) : ''),
         };
       })
       .sort((a, b) => {
@@ -193,7 +202,15 @@ export class GanttComponent {
   );
 
   constructor() {
-    afterNextRender(() => this.scrollToToday());
+    // La frise n'existe qu'une fois un projet ouvert, et sa plage s'élargit quand les tâches
+    // sont lues : on se recentre sur aujourd'hui dans les deux cas.
+    effect(() => {
+      const timeline = this.scroller();
+      this.hasTasks();
+      if (timeline) {
+        untracked(() => setTimeout(() => this.scrollToToday()));
+      }
+    });
   }
 
   scrollToToday() {

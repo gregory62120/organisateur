@@ -101,3 +101,19 @@ const AVATAR_COLORS = ['#2f6bff', '#8b5cf6', '#19b36b', '#ff9f1a', '#ef4452', '#
 export function avatarColor(name?: string): string {
   return AVATAR_COLORS[hash(name ?? '') % AVATAR_COLORS.length];
 }
+
+/** Date courte pour les tableaux : « 17 oct. », avec l'année seulement si ce n'est pas l'année en cours. */
+export function formatShortDate(date?: string, now = new Date()): string {
+  if (!date) {
+    return '';
+  }
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime())) {
+    return '';
+  }
+  return parsed.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    ...(parsed.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+  });
+}
