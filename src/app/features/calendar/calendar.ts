@@ -22,6 +22,9 @@ import {
 } from '../../core/models/task-labels';
 import { uniqueAssignees } from '../../core/models/task-state';
 import { EventService } from '../../core/services/event.service';
+import { MusicPlayerService } from '../../core/services/music-player.service';
+import { MusicPanelComponent } from '../../shared/music/music-panel/music-panel';
+import { MusicLaneComponent } from './components/music-lane/music-lane';
 import {
   CalendarDay,
   CalendarEvent,
@@ -38,8 +41,8 @@ import { EventDialogService } from './services/event-dialog.service';
 /** Nombre d'échéances affichées par jour dans la vue mois avant « +N autres ». */
 const MONTH_LIMIT = 3;
 
-/** Hauteur (px) d'une heure dans la grille de la vue semaine. */
-const HOUR_PX = 48;
+/** Hauteur (px) d'une heure dans la grille : plus haute en vue jour, où il y a de la place. */
+const HOUR_PX = { week: 48, day: 72 } as const;
 
 /** Heure à laquelle la grille est positionnée à l'ouverture, si aucun évènement n'est plus tôt. */
 const FIRST_VISIBLE_HOUR = 7;
@@ -57,7 +60,7 @@ export interface WeekColumn {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, MusicPanelComponent, MusicLaneComponent],
   templateUrl: './calendar.html',
   styleUrl: './calendar.scss',
 })
@@ -73,6 +76,8 @@ export class CalendarComponent {
   private eventService = inject(EventService);
 
   private eventDialogs = inject(EventDialogService);
+
+  private musicPlayer = inject(MusicPlayerService);
 
   storage = inject(StorageService);
 
@@ -122,25 +127,30 @@ export class CalendarComponent {
 
   readonly title = computed(() => this.calendar.title(this.cursor(), this.view()));
 
-  readonly weeks = computed(() =>
-    this.view() === 'month'
-      ? this.calendar.monthWeeks(this.cursor(), this.byDay())
-      : [this.calendar.weekDays(this.cursor(), this.byDay())],
-  );
+  readonly weeks = computed(() => {
+    switch (this.view()) {
+      case 'month':
+        return this.calendar.monthWeeks(this.cursor(), this.byDay());
+      case 'week':
+        return [this.calendar.weekDays(this.cursor(), this.byDay())];
+      default:
+        return [this.calendar.dayColumn(this.cursor(), this.byDay())];
+    }
+  });
 
   readonly hours = Array.from({ length: 24 }, (_, hour) => hour);
 
-  readonly hourPx = HOUR_PX;
+  readonly hourPx = computed(() => (this.view() === 'day' ? HOUR_PX.day : HOUR_PX.week));
 
-  /** Vue semaine : une colonne par jour, avec la bande « toute la journée » et les créneaux horaires. */
-  readonly weekColumns = computed<WeekColumn[]>(() =>
-    this.view() === 'week'
-      ? this.weeks()[0].map((day) => ({
+  /** Vues semaine et jour : une colonne par jour, avec la bande « toute la journée » et les créneaux horaires. */
+  readonly gridColumns = computed<WeekColumn[]>(() =>
+    this.view() === 'month'
+      ? []
+      : this.weeks()[0].map((day) => ({
           day,
           allDay: day.events.filter((e) => !this.calendar.isTimed(e)),
           timed: this.calendar.layoutTimed(day.events.filter((e) => this.calendar.isTimed(e))),
-        }))
-      : [],
+        })),
   );
 
   private readonly now = signal(new Date());
@@ -186,7 +196,10 @@ export class CalendarComponent {
   );
 
   constructor() {
-    const timer = setInterval(() => this.now.set(new Date()), 60_000);
+    const timer = setInterval(() => {
+      this.now.set(new Date());
+      this.musicPlayer.refreshClock();
+    }, 60_000);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
 
     // La grille s'ouvre sur la matinée, ou sur le premier évènement de la semaine s'il est plus tôt.
@@ -209,6 +222,10 @@ export class CalendarComponent {
   }
 
   setView(view: CalendarView) {
+    // Semaine et jour s'ouvrent sur le jour sélectionné ; le mois garde le mois affiché.
+    if (view !== 'month') {
+      this.cursor.set(this.selectedDate());
+    }
     this.view.set(view);
   }
 
@@ -243,7 +260,7 @@ export class CalendarComponent {
   addEventAt(iso: string, domEvent: MouseEvent) {
     const column = domEvent.currentTarget as HTMLElement;
     const y = domEvent.clientY - column.getBoundingClientRect().top;
-    const minutes = Math.floor(((y / HOUR_PX) * 60) / SLOT_STEP) * SLOT_STEP;
+    const minutes = Math.floor(((y / this.hourPx()) * 60) / SLOT_STEP) * SLOT_STEP;
     const clamped = Math.min(Math.max(minutes, 0), 24 * 60 - SLOT_STEP);
     const time = `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`;
     this.addEvent(iso, time);
@@ -251,12 +268,18 @@ export class CalendarComponent {
 
   /** Défilement initial : 7 h, ou une heure avant le premier évènement de la semaine s'il est plus tôt. */
   private firstHourPx(): number {
-    const earliest = this.weekColumns()
+    const earliest = this.gridColumns()
       .flatMap((c) => c.timed)
       .reduce((min, slot) => Math.min(min, Math.floor((slot.top / 100) * 24)), Infinity);
     return (
-      (earliest < FIRST_VISIBLE_HOUR ? Math.max(earliest - 1, 0) : FIRST_VISIBLE_HOUR) * HOUR_PX
+      (earliest < FIRST_VISIBLE_HOUR ? Math.max(earliest - 1, 0) : FIRST_VISIBLE_HOUR) *
+      this.hourPx()
     );
+  }
+
+  /** Nom court du jour de la semaine d'une colonne (« Lun », « Mar »…). */
+  weekdayLabel(day: CalendarDay): string {
+    return this.weekdays[(day.date.getDay() + 6) % 7];
   }
 
   /** Icône d'une puce : état d'abord (terminée, en retard), puis nature de l'élément. */

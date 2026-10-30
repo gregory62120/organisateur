@@ -10,39 +10,6 @@
 @include page.toolbar;
 @include page.empty-state;
 
-// Couleurs d'un évènement : mêmes variables que les priorités des tâches.
-@mixin event-colors {
-  &[data-color='blue'] {
-    --prio: var(--tf-primary);
-    --prio-soft: var(--tf-primary-soft);
-  }
-
-  &[data-color='violet'] {
-    --prio: var(--tf-violet);
-    --prio-soft: var(--tf-violet-soft);
-  }
-
-  &[data-color='green'] {
-    --prio: var(--tf-green);
-    --prio-soft: var(--tf-green-soft);
-  }
-
-  &[data-color='orange'] {
-    --prio: var(--tf-orange);
-    --prio-soft: var(--tf-orange-soft);
-  }
-
-  &[data-color='red'] {
-    --prio: var(--tf-red);
-    --prio-soft: var(--tf-red-soft);
-  }
-
-  &[data-color='cyan'] {
-    --prio: #0e9fb3;
-    --prio-soft: #def5f8;
-  }
-}
-
 $prio-high: var(--tf-red);
 $prio-medium: var(--tf-orange);
 $prio-low: var(--tf-green);
@@ -373,8 +340,6 @@ $prio-low: var(--tf-green);
     --prio-soft: var(--tf-green-soft);
   }
 
-  @include event-colors;
-
   .material-symbols-outlined {
     flex: none;
     font-size: 14px;
@@ -574,8 +539,6 @@ $prio-low: var(--tf-green);
     --prio: var(--tf-green);
   }
 
-  @include event-colors;
-
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(15, 31, 61, 0.1);
@@ -699,7 +662,7 @@ $prio-low: var(--tf-green);
 .tg-allday,
 .tg-body {
   display: grid;
-  grid-template-columns: var(--gutter) repeat(7, minmax(0, 1fr));
+  grid-template-columns: var(--gutter) repeat(var(--cols, 7), minmax(0, 1fr));
 }
 
 .tg-head {
@@ -718,6 +681,10 @@ $prio-low: var(--tf-green);
   background: transparent;
   font: inherit;
   cursor: pointer;
+
+  .number {
+    align-self: center;
+  }
 
   .dow {
     font-size: 12px;
@@ -851,8 +818,6 @@ $prio-low: var(--tf-green);
   cursor: pointer;
   transition: box-shadow 0.12s ease;
 
-  @include event-colors;
-
   &:hover {
     z-index: 2;
     box-shadow: 0 6px 16px rgba(15, 31, 61, 0.25);
@@ -910,4 +875,46 @@ $prio-low: var(--tf-green);
     border-radius: 50%;
     background: var(--tf-red);
   }
+}
+
+// Vue jour : les évènements à gauche, la voie musicale à droite
+.slots {
+  position: absolute;
+  inset: 0;
+}
+
+.tg-col.with-music .slots {
+  right: 30%;
+}
+
+// Couleur d'un évènement, commune aux puces, aux créneaux de la grille et aux listes.
+// Placé en dernier pour l'emporter sur la couleur par défaut de chaque élément.
+[data-color='blue'] {
+  --prio: var(--tf-primary);
+  --prio-soft: var(--tf-primary-soft);
+}
+
+[data-color='violet'] {
+  --prio: var(--tf-violet);
+  --prio-soft: var(--tf-violet-soft);
+}
+
+[data-color='green'] {
+  --prio: var(--tf-green);
+  --prio-soft: var(--tf-green-soft);
+}
+
+[data-color='orange'] {
+  --prio: var(--tf-orange);
+  --prio-soft: var(--tf-orange-soft);
+}
+
+[data-color='red'] {
+  --prio: var(--tf-red);
+  --prio-soft: var(--tf-red-soft);
+}
+
+[data-color='cyan'] {
+  --prio: #0e9fb3;
+  --prio-soft: #def5f8;
 }

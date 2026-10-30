@@ -1,0 +1,140 @@
+<section class="music">
+  <header class="head">
+    <h3>
+      <span class="material-symbols-outlined">library_music</span>
+      Musique
+    </h3>
+    <span class="summary">
+      {{ tracks().length }} titre{{ tracks().length > 1 ? 's' : '' }}
+      @if (tracks().length) {
+        · {{ total() }}
+      }
+    </span>
+  </header>
+
+  <div class="transport">
+    <button
+      type="button"
+      class="play"
+      [class.on]="player.status() === 'playing'"
+      [disabled]="!tracks().length || player.status() === 'loading'"
+      (click)="player.toggle()"
+    >
+      <span class="material-symbols-outlined">
+        {{ player.status() === 'playing' ? 'pause' : 'play_arrow' }}
+      </span>
+      {{ playLabel() }}
+    </button>
+
+    @if (player.isActive()) {
+      <button
+        type="button"
+        class="icon"
+        title="Titre précédent"
+        [disabled]="!player.hasPrevious() && player.position() <= 3"
+        (click)="player.previous()"
+      >
+        <span class="material-symbols-outlined">skip_previous</span>
+      </button>
+      <button
+        type="button"
+        class="icon"
+        title="Titre suivant"
+        [disabled]="!player.hasNext()"
+        (click)="player.next()"
+      >
+        <span class="material-symbols-outlined">skip_next</span>
+      </button>
+      <button type="button" class="icon" title="Arrêter" (click)="player.stop()">
+        <span class="material-symbols-outlined">stop</span>
+      </button>
+    }
+  </div>
+
+  @if (player.current(); as current) {
+    @if (player.isActive()) {
+      <div class="now">
+        <span class="now-title">{{ current.title }}</span>
+        <span class="bar" role="progressbar" [attr.aria-valuenow]="progress()">
+          <span [style.width.%]="progress()"></span>
+        </span>
+        <span class="now-time">
+          {{ formatDuration(player.position()) }} / {{ formatDuration(player.duration()) }}
+        </span>
+      </div>
+    }
+  }
+
+  @if (player.message(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <form class="add" (submit)="$event.preventDefault(); add()">
+    <input
+      type="text"
+      aria-label="Lien YouTube"
+      placeholder="Coller un lien YouTube"
+      [value]="url()"
+      [disabled]="adding()"
+      (input)="url.set($any($event.target).value)"
+    />
+    <button type="submit" [disabled]="adding() || !url().trim()">
+      {{ adding() ? 'Ajout…' : 'Ajouter' }}
+    </button>
+  </form>
+
+  @if (addError(); as error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (tracks().length) {
+    <p class="hint">Glisse un titre sur la journée pour le planifier à l'avance.</p>
+  }
+
+  <ul class="tracks">
+    @for (track of tracks(); track track.id) {
+      <li
+        class="track"
+        [class.current]="track.id === player.currentId() && player.isActive()"
+        draggable="true"
+        (dragstart)="onDragStart($event, track.id)"
+        (click)="player.play(track.id)"
+      >
+        <img [src]="thumbnail(track.videoId)" alt="" loading="lazy" />
+        <span class="info">
+          <span class="name" [title]="track.title">{{ track.title }}</span>
+          <span class="sub">
+            {{ formatDuration(track.duration) }}
+            @if (planned().get(track.id); as planned) {
+              · <span class="planned">Planifié {{ planned }}</span>
+            } @else if (times().get(track.id); as time) {
+              · {{ time }}
+            }
+            @if (track.author) {
+              · {{ track.author }}
+            }
+          </span>
+        </span>
+        <span class="actions">
+          <button type="button" title="Planifier sur ce jour" (click)="schedule(track.id, $event)">
+            <span class="material-symbols-outlined">event_available</span>
+          </button>
+          <button type="button" title="Monter" (click)="move(track.id, -1, $event)">
+            <span class="material-symbols-outlined">arrow_upward</span>
+          </button>
+          <button type="button" title="Descendre" (click)="move(track.id, 1, $event)">
+            <span class="material-symbols-outlined">arrow_downward</span>
+          </button>
+          <button type="button" title="Retirer de la playlist" (click)="remove(track.id, $event)">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </span>
+      </li>
+    } @empty {
+      <li class="empty">
+        <span class="material-symbols-outlined">music_note</span>
+        Aucune musique. Colle un lien YouTube pour construire ta playlist de travail.
+      </li>
+    }
+  </ul>
+</section>
