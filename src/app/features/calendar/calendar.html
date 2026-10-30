@@ -1,15 +1,400 @@
-<h1>Calendrier projet</h1>
-
-<mat-calendar (selectedChange)="change($event)"> </mat-calendar>
-
-<h2>Tâches prévues</h2>
-
-@for (task of tasks; track task.id) {
+<header class="page-head">
   <div>
-    {{ task.title }}
+    <h1>Calendrier</h1>
+    <p class="subtitle">
+      Échéances des tâches
+      @if (storage.root(); as root) {
+        - {{ root.name }}
+      }
+    </p>
+  </div>
+</header>
 
-    @if (task.status !== 'DONE') {
-      ⚠️
-    }
+@if (!storage.isOpen()) {
+  <section class="empty-state">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h2>Aucun projet ouvert</h2>
+    <p>Ouvrez un dossier : le calendrier est construit à partir de <code>tasks.json</code>.</p>
+    <button type="button" class="btn-primary" (click)="openProject()">
+      <span class="material-symbols-outlined">create_new_folder</span>
+      Ouvrir un projet
+    </button>
+  </section>
+} @else {
+  <div class="toolbar">
+    <div class="top">
+      <div class="nav">
+        <button type="button" class="icon-btn" aria-label="Précédent" (click)="move(-1)">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <h2 class="period">{{ title() }}</h2>
+        <button type="button" class="icon-btn" aria-label="Suivant" (click)="move(1)">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+        <button type="button" class="btn-today" (click)="goToday()">Aujourd'hui</button>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-add" (click)="addEvent()">
+          <span class="material-symbols-outlined">add</span>
+          Évènement
+        </button>
+
+        <div class="segmented" role="group" aria-label="Vue">
+          <button type="button" [class.active]="view() === 'month'" (click)="setView('month')">
+            Mois
+          </button>
+          <button type="button" [class.active]="view() === 'week'" (click)="setView('week')">
+            Semaine
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <select
+        aria-label="Filtrer par responsable"
+        [value]="assigneeFilter()"
+        (change)="assigneeFilter.set($any($event.target).value)"
+      >
+        <option value="">Responsable</option>
+        @for (assignee of assignees(); track assignee) {
+          <option [value]="assignee">{{ assignee }}</option>
+        }
+      </select>
+
+      <select
+        aria-label="Filtrer par statut"
+        [value]="statusFilter()"
+        (change)="statusFilter.set($any($event.target).value)"
+      >
+        <option value="">Statut</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ statusLabels[status] }}</option>
+        }
+      </select>
+
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="hideDone()"
+          (change)="hideDone.set($any($event.target).checked)"
+        />
+        Masquer les terminées
+      </label>
+
+      @if (hasFilter()) {
+        <button type="button" class="btn-link" (click)="resetFilters()">Réinitialiser</button>
+      }
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="calendar" [class.week]="view() === 'week'" aria-label="Calendrier">
+      @if (view() === 'month') {
+        <div class="weekdays">
+          @for (name of weekdays; track name) {
+            <span>{{ name }}</span>
+          }
+        </div>
+
+        <div class="weeks">
+          @for (week of weeks(); track week[0].iso) {
+            <div class="week-row">
+              @for (day of week; track day.iso) {
+                <div
+                  class="day"
+                  role="button"
+                  tabindex="0"
+                  [class.outside]="!day.inMonth"
+                  [class.weekend]="day.weekend"
+                  [class.today]="day.today"
+                  [class.selected]="day.iso === selected()"
+                  [attr.aria-label]="day.iso"
+                  (click)="select(day.iso)"
+                  (dblclick)="addEvent(day.iso)"
+                  (keydown.enter)="select(day.iso)"
+                >
+                  <span class="day-head">
+                    <span class="number">{{ day.day }}</span>
+                    <button
+                      type="button"
+                      class="add-day"
+                      [attr.aria-label]="'Ajouter un évènement le ' + day.iso"
+                      title="Ajouter un évènement"
+                      (click)="addEvent(day.iso); $event.stopPropagation()"
+                    >
+                      <span class="material-symbols-outlined">add</span>
+                    </button>
+                  </span>
+
+                  <ul class="events">
+                    @for (event of day.events.slice(0, limit()); track event.key) {
+                      <li>
+                        <ng-container
+                          [ngTemplateOutlet]="chipTpl"
+                          [ngTemplateOutletContext]="{ $implicit: event }"
+                        />
+                      </li>
+                    }
+                  </ul>
+
+                  @if (day.events.length > limit()) {
+                    <button
+                      type="button"
+                      class="more"
+                      (click)="select(day.iso); $event.stopPropagation()"
+                    >
+                      +{{ day.events.length - limit() }} autre{{
+                        day.events.length - limit() > 1 ? 's' : ''
+                      }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="time-grid" [style.--hour.px]="hourPx">
+          <div class="tg-head">
+            <span class="gutter"></span>
+            @for (col of weekColumns(); track col.day.iso) {
+              <button
+                type="button"
+                class="col-head"
+                [class.today]="col.day.today"
+                [class.selected]="col.day.iso === selected()"
+                (click)="select(col.day.iso)"
+                (dblclick)="addEvent(col.day.iso)"
+              >
+                <span class="dow">{{ weekdays[$index] }}</span>
+                <span class="number">{{ col.day.day }}</span>
+              </button>
+            }
+          </div>
+
+          <div class="tg-allday">
+            <span class="gutter">Journée</span>
+            @for (col of weekColumns(); track col.day.iso) {
+              <div
+                class="allday-cell"
+                [class.selected]="col.day.iso === selected()"
+                (click)="select(col.day.iso)"
+                (dblclick)="addAllDayEvent(col.day.iso)"
+              >
+                <ul class="events">
+                  @for (event of col.allDay; track event.key) {
+                    <li>
+                      <ng-container
+                        [ngTemplateOutlet]="chipTpl"
+                        [ngTemplateOutletContext]="{ $implicit: event }"
+                      />
+                    </li>
+                  }
+                </ul>
+                <button
+                  type="button"
+                  class="add-day"
+                  title="Ajouter un évènement sur toute la journée"
+                  [attr.aria-label]="'Ajouter un évènement le ' + col.day.iso"
+                  (click)="addAllDayEvent(col.day.iso); $event.stopPropagation()"
+                >
+                  <span class="material-symbols-outlined">add</span>
+                </button>
+              </div>
+            }
+          </div>
+
+          <div class="tg-body" #gridBody>
+            <div class="gutter hours">
+              @for (hour of hours; track hour) {
+                <span class="hour-label">{{ hour === 0 ? '' : hour + ':00' }}</span>
+              }
+            </div>
+
+            @for (col of weekColumns(); track col.day.iso) {
+              <div
+                class="tg-col"
+                [class.today]="col.day.today"
+                [class.weekend]="col.day.weekend"
+                [class.selected]="col.day.iso === selected()"
+                (click)="select(col.day.iso)"
+                (dblclick)="addEventAt(col.day.iso, $event)"
+              >
+                @for (slot of col.timed; track slot.event.key) {
+                  <button
+                    type="button"
+                    class="slot"
+                    [class.dense]="slot.lanes > 2"
+                    [attr.data-color]="slot.event.color"
+                    [style.top.%]="slot.top"
+                    [style.height.%]="slot.height"
+                    [style.left.%]="(slot.lane / slot.lanes) * 100"
+                    [style.width.%]="100 / slot.lanes"
+                    [title]="slot.event.title + ' · ' + slot.event.time"
+                    (click)="open(slot.event, $event)"
+                    (dblclick)="$event.stopPropagation()"
+                  >
+                    <span class="slot-title">{{ slot.event.title }}</span>
+                    <span class="slot-time">{{ slot.event.time }}</span>
+                  </button>
+                }
+
+                @if (col.day.today) {
+                  <span class="now" [style.top.%]="nowPercent()"></span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <footer class="legend">
+        <span><i data-priority="HIGH"></i> Haute</span>
+        <span><i data-priority="MEDIUM"></i> Moyenne</span>
+        <span><i data-priority="LOW"></i> Basse</span>
+        <span class="legend-item"
+          ><span class="material-symbols-outlined">error</span> En retard</span
+        >
+        <span class="legend-item">
+          <span class="material-symbols-outlined">subdirectory_arrow_right</span> Sous-tâche
+        </span>
+        <span class="legend-item">
+          <span class="material-symbols-outlined">schedule</span> Évènement
+        </span>
+      </footer>
+    </section>
+
+    <aside class="side">
+      <section class="card stats">
+        <div class="stat late">
+          <strong>{{ overdueCount() }}</strong>
+          <span>En retard</span>
+        </div>
+        <div class="stat week">
+          <strong>{{ weekCount() }}</strong>
+          <span>Cette semaine</span>
+        </div>
+        <div class="stat month">
+          <strong>{{ monthCount() }}</strong>
+          <span>Ce mois-ci</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="card-title">
+          {{
+            selectedDate().toLocaleDateString('fr-FR', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            })
+          }}
+        </h3>
+
+        <ul class="agenda">
+          @for (event of selectedEvents(); track event.key) {
+            <li>
+              <button
+                type="button"
+                class="agenda-item"
+                [attr.data-priority]="event.kind === 'event' ? null : event.priority"
+                [attr.data-color]="event.kind === 'event' ? event.color : null"
+                [class.done]="event.done"
+                (click)="open(event)"
+              >
+                <span class="bar"></span>
+                <span class="body">
+                  <span class="name">{{ event.title }}</span>
+                  <span class="meta">
+                    @if (event.kind === 'event') {
+                      <span class="material-symbols-outlined meta-icon">schedule</span>
+                      {{ event.time ?? 'Toute la journée' }}
+                    } @else if (event.kind === 'subtask') {
+                      Sous-tâche de « {{ event.task.title }} »
+                    } @else {
+                      {{ statusLabels[event.status] }} · {{ priorityLabels[event.priority] }}
+                    }
+                    @if (event.overdue) {
+                      <b class="late-tag">En retard</b>
+                    }
+                  </span>
+                </span>
+                @if (event.assignee) {
+                  <span
+                    class="avatar"
+                    [style.background]="avatarColor(event.assignee)"
+                    [title]="event.assignee"
+                  >
+                    {{ initials(event.assignee) }}
+                  </span>
+                }
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">
+              <span class="material-symbols-outlined">event_available</span>
+              Rien de prévu ce jour-là.
+              <button type="button" class="btn-link small" (click)="addEvent(selected())">
+                Ajouter un évènement
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="card">
+        <h3 class="card-title">Prochaines échéances</h3>
+
+        <ul class="agenda">
+          @for (event of upcoming(); track event.key) {
+            <li>
+              <button
+                type="button"
+                class="agenda-item"
+                [attr.data-priority]="event.kind === 'event' ? null : event.priority"
+                [attr.data-color]="event.kind === 'event' ? event.color : null"
+                (click)="open(event)"
+              >
+                <span class="date-badge">{{ relativeDay(event.date) }}</span>
+                <span class="body">
+                  <span class="name">{{ event.title }}</span>
+                  @if (event.kind === 'event' && event.time) {
+                    <span class="meta">{{ event.time }}</span>
+                  }
+                </span>
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">
+              <span class="material-symbols-outlined">celebration</span>
+              Rien à venir, tout est à jour.
+            </li>
+          }
+        </ul>
+      </section>
+    </aside>
   </div>
 }
+
+<ng-template #chipTpl let-event>
+  <button
+    type="button"
+    class="chip"
+    [attr.data-priority]="event.kind === 'event' ? null : event.priority"
+    [attr.data-color]="event.kind === 'event' ? event.color : null"
+    [class.event]="event.kind === 'event'"
+    [class.done]="event.done"
+    [class.overdue]="event.overdue"
+    [class.subtask]="event.kind === 'subtask'"
+    [title]="event.title"
+    (click)="open(event, $event)"
+  >
+    <span class="material-symbols-outlined">{{ chipIcon(event) }}</span>
+    @if (event.kind === 'event' && event.time) {
+      <span class="time">{{ event.projectEvent.startTime }}</span>
+    }
+    <span class="label">{{ event.title }}</span>
+  </button>
+</ng-template>

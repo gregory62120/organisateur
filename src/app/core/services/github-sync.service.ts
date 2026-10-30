@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DocumentService } from './document.service';
+import { EVENTS_FILE, EventService } from './event.service';
 import { StorageService } from './storage.service';
 import { TaskService } from './task.service';
 
@@ -16,6 +17,7 @@ export class GithubSyncService {
   private readonly storage = inject(StorageService);
   private readonly documentService = inject(DocumentService);
   private readonly taskService = inject(TaskService);
+  private readonly eventService = inject(EventService);
 
   private readonly syncingState = signal(false);
   readonly syncing = this.syncingState.asReadonly();
@@ -50,9 +52,10 @@ export class GithubSyncService {
     try {
       const { owner, repo, branch } = this.config;
 
-      const [tasks, documents] = await Promise.all([
+      const [tasks, documents, events] = await Promise.all([
         this.storage.read('tasks.json'),
         this.storage.read('document.json'),
+        this.readOptional(EVENTS_FILE),
       ]);
 
       if (tasks === undefined) {
@@ -96,6 +99,10 @@ export class GithubSyncService {
 
       const documentsBlob = await this.createBlob(owner, repo, documents, token);
 
+      // events.json n'existe qu'une fois un évènement créé : il est synchronisé s'il est présent.
+      const eventsBlob =
+        events === undefined ? null : await this.createBlob(owner, repo, events, token);
+
       /*
        * 4. Création d'un tree contenant les 2 fichiers
        */
@@ -119,6 +126,9 @@ export class GithubSyncService {
                 type: 'blob',
                 sha: documentsBlob.sha,
               },
+              ...(eventsBlob
+                ? [{ path: EVENTS_FILE, mode: '100644', type: 'blob', sha: eventsBlob.sha }]
+                : []),
             ],
           }),
         },
@@ -195,9 +205,29 @@ export class GithubSyncService {
       this.documentService.updateDocuments(docs);
       this.taskService.updateTask(JSON.parse(tasks));
 
+      // Un dépôt sans events.json (jamais synchronisé avec des évènements) reste valide.
+      const events = await this.getFile(owner, repo, branch, EVENTS_FILE, headers).catch(
+        () => null,
+      );
+      if (events) {
+        this.eventService.updateEvents(JSON.parse(events));
+      }
+
       this.lastSyncState.set(new Date());
     } finally {
       this.pullingState.set(false);
+    }
+  }
+
+  /** Contenu d'un fichier du projet, ou `undefined` s'il n'existe pas encore. */
+  private async readOptional(path: string): Promise<string | undefined> {
+    try {
+      return await this.storage.read(path);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'NotFoundError') {
+        return undefined;
+      }
+      throw error;
     }
   }
 

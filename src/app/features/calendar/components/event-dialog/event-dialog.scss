@@ -1,0 +1,120 @@
+:host {
+  width: min(560px, 94vw);
+}
+
+.toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--tf-text);
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--tf-primary);
+  }
+}
+
+input[type='time']:disabled {
+  background: var(--tf-bg);
+  color: var(--tf-muted);
+  cursor: not-allowed;
+}
+
+.hint {
+  margin: -8px 0 0;
+  font-size: 12px;
+  color: var(--tf-orange);
+}
+
+input[type='time'] {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--tf-border);
+  border-radius: 10px;
+  background: var(--tf-surface);
+  font: inherit;
+  font-size: 14px;
+  color: var(--tf-text);
+
+  &:focus {
+    outline: none;
+    border-color: var(--tf-primary);
+    box-shadow: 0 0 0 3px var(--tf-primary-soft);
+  }
+}
+
+.color-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.swatches {
+  display: flex;
+  gap: 10px;
+}
+
+.swatch {
+  --swatch: #2f6bff;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px var(--tf-border);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+
+  &[data-color='violet'] {
+    --swatch: #8b5cf6;
+  }
+
+  &[data-color='green'] {
+    --swatch: #19b36b;
+  }
+
+  &[data-color='orange'] {
+    --swatch: #ff9f1a;
+  }
+
+  &[data-color='red'] {
+    --swatch: #ef4452;
+  }
+
+  &[data-color='cyan'] {
+    --swatch: #0e9fb3;
+  }
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &.selected {
+    box-shadow: 0 0 0 2px var(--swatch);
+  }
+}
+
+.description-field textarea {
+  min-height: 90px;
+  padding: 10px 12px;
+  border: 1px solid var(--tf-border);
+  border-radius: 10px;
+  background: var(--tf-surface);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--tf-text);
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--tf-primary);
+    box-shadow: 0 0 0 3px var(--tf-primary-soft);
+  }
+}
