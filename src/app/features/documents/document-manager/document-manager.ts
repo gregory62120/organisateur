@@ -27,7 +27,6 @@ export class DocumentManagerComponent implements OnInit {
   private isInitialize: boolean = true;
 
   constructor() {
-
     // Se réactualiser quand un projet est ouvert
     effect(() => {
       const count = this.storage.projectOpened();

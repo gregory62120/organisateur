@@ -1,0 +1,59 @@
+<header class="head">
+  <input
+    class="title"
+    aria-label="Titre de la sous-tâche"
+    placeholder="Titre de la sous-tâche"
+    [value]="label()"
+    (input)="label.set($any($event.target).value)"
+  />
+  <button type="button" class="icon-btn" title="Fermer" (click)="close()">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+</header>
+
+<p class="parent">Sous-tâche de « {{ parentTitle }} »</p>
+
+<div class="fields">
+  <label>
+    <span>Statut</span>
+    <select
+      [value]="completed() ? 'done' : 'todo'"
+      (change)="completed.set($any($event.target).value === 'done')"
+    >
+      <option value="todo" [selected]="!completed()">À faire</option>
+      <option value="done" [selected]="completed()">Terminée</option>
+    </select>
+  </label>
+
+  <label>
+    <span>Échéance</span>
+    <input type="date" [value]="dueDate()" (input)="dueDate.set($any($event.target).value)" />
+  </label>
+
+  <label>
+    <span>Responsable</span>
+    <input
+      type="text"
+      placeholder="Nom du responsable"
+      [value]="assignedTo()"
+      (input)="assignedTo.set($any($event.target).value)"
+    />
+  </label>
+</div>
+
+<div class="description">
+  <span class="label">Description</span>
+  <div class="editor">
+    <app-editor [content]="content()" (contentChange)="content.set($event)" />
+  </div>
+</div>
+
+<footer class="actions">
+  <button type="button" class="btn-danger" (click)="remove()">
+    <span class="material-symbols-outlined">delete</span>
+    Supprimer
+  </button>
+  <span class="spacer"></span>
+  <button type="button" class="btn-secondary" (click)="close()">Annuler</button>
+  <button type="button" class="btn-primary" (click)="save()">Enregistrer</button>
+</footer>

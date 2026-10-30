@@ -1,7 +1,7 @@
-import { Component, input } from "@angular/core";
+import { Component, input } from '@angular/core';
 
 @Component({
-  selector: "app-code-view",
+  selector: 'app-code-view',
   standalone: true,
   imports: [],
   template: `
@@ -20,7 +20,7 @@ import { Component, input } from "@angular/core";
 
       .code-block {
         margin: 0;
-        font-family: "Fira Code", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+        font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
         font-size: 13px;
         line-height: 1.7;
         color: #94a3b8;
@@ -36,5 +36,5 @@ import { Component, input } from "@angular/core";
   ],
 })
 export class CodeViewComponent {
-  code = input<string>("");
+  code = input<string>('');
 }

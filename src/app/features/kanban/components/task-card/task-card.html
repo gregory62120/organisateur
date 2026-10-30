@@ -1,10 +1,43 @@
 <article class="task" tabindex="0" (click)="opened.emit()" (keydown.enter)="opened.emit()">
   <header>
     <h3>{{ task().title }}</h3>
-    <button type="button" class="delete" title="Supprimer la tâche" (click)="delete($event)">
-      <span class="material-symbols-outlined">delete</span>
-    </button>
+    <span class="actions">
+      @if (group() !== 'archived') {
+        <button
+          type="button"
+          class="action sprint"
+          [title]="group() === 'sprint' ? 'Masquer (hors sprint)' : 'Ajouter au sprint'"
+          (click)="toggleSprint($event)"
+        >
+          <span class="material-symbols-outlined">
+            {{ group() === 'sprint' ? 'visibility_off' : 'visibility' }}
+          </span>
+        </button>
+      }
+      <button
+        type="button"
+        class="action archive"
+        [title]="group() === 'archived' ? 'Restaurer' : 'Archiver'"
+        (click)="toggleArchive($event)"
+      >
+        <span class="material-symbols-outlined">
+          {{ group() === 'archived' ? 'unarchive' : 'archive' }}
+        </span>
+      </button>
+      <button
+        type="button"
+        class="action delete"
+        title="Supprimer la tâche"
+        (click)="delete($event)"
+      >
+        <span class="material-symbols-outlined">delete</span>
+      </button>
+    </span>
   </header>
+
+  @if (group() !== 'sprint') {
+    <span class="status-chip" [attr.data-status]="task().status">{{ statusLabel() }}</span>
+  }
 
   @if (task().tags?.length) {
     <ul class="tags">
@@ -12,6 +45,51 @@
         <li [style.background]="tone(tag).bg" [style.color]="tone(tag).fg">{{ tag }}</li>
       }
     </ul>
+  }
+
+  @if (task().checklist.length) {
+    <section class="subtasks">
+      <button
+        type="button"
+        class="subtasks-toggle"
+        [attr.aria-expanded]="subtasksOpen()"
+        (click)="toggleSubtasks($event)"
+      >
+        <span class="material-symbols-outlined">
+          {{ subtasksOpen() ? 'expand_more' : 'chevron_right' }}
+        </span>
+        Sous-tâches
+        <span class="subtasks-count">{{ checklistDone() }}/{{ task().checklist.length }}</span>
+        <span class="subtasks-bar"><span [style.width.%]="checklistProgress()"></span></span>
+      </button>
+
+      @if (subtasksOpen()) {
+        <ul>
+          @for (item of task().checklist; track item.id) {
+            <li [class.done]="item.completed">
+              <input
+                type="checkbox"
+                [checked]="item.completed"
+                [attr.aria-label]="'Terminer ' + item.label"
+                (click)="$event.stopPropagation()"
+                (change)="toggleSubtask($event, item.id)"
+              />
+              <button
+                type="button"
+                class="subtask-open"
+                title="Modifier la sous-tâche"
+                (click)="openSubtask($event, item.id)"
+              >
+                {{ item.label }}
+              </button>
+              @if (item.dueDate) {
+                <span class="subtask-due">{{ formatDate(item.dueDate) }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
   }
 
   <footer>
@@ -42,7 +120,9 @@
     }
 
     @if (assigneeInitials()) {
-      <span class="avatar" [style.background]="avatarBg()" [title]="task().assignedTo">{{ assigneeInitials() }}</span>
+      <span class="avatar" [style.background]="avatarBg()" [title]="task().assignedTo">{{
+        assigneeInitials()
+      }}</span>
     }
   </footer>
 </article>

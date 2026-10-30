@@ -1,0 +1,39 @@
+:host {
+  display: block;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tf-text);
+  cursor: pointer;
+}
+
+.count {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tf-muted);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+:host(.sticky) .toggle {
+  position: sticky;
+  left: 0;
+  width: min(100%, 100vw);
+  border-bottom: 1px solid var(--tf-border);
+  background: var(--tf-bg);
+  font-size: 14px;
+}
