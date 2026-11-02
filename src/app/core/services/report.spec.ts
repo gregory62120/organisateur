@@ -453,7 +453,25 @@ describe('report', () => {
         now,
       );
 
-      expect(result.rate).toBe(0.8);
+      // Les semaines d'avant la première tâche terminée ne comptent pas : 1 par semaine.
+      expect(result.rate).toBe(1);
+      expect(result.periodsLeft).toBe(1);
+    });
+
+    it('compte la semaine en cours quand elle dépasse déjà le rythme des semaines complètes', () => {
+      // 3 terminées la semaine du 19 oct., 6 la semaine en cours (30 oct.), 5 restantes.
+      const done = (id: string, day: string) =>
+        makeTask(id, { status: 'DONE', createdAt: at('2026-10-01'), completedAt: at(day) });
+      const result = burnup(
+        [
+          ...['a', 'b', 'c'].map((id) => done(id, '2026-10-21')),
+          ...['d', 'e', 'f', 'g', 'h', 'i'].map((id) => done(id, '2026-10-27')),
+          ...['j', 'k', 'l', 'm', 'n'].map((id) => makeTask(id, { createdAt: at('2026-10-01') })),
+        ],
+        now,
+      );
+
+      expect(result.rate).toBe(4.5);
       expect(result.periodsLeft).toBe(2);
     });
 

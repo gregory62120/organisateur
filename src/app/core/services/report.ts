@@ -270,10 +270,21 @@ export function burnup(tasks: Task[], now = new Date()): Burnup {
   const scopeNow = flow.cumulativeCreated[actual - 1];
   const doneNow = flow.cumulativeCompleted[actual - 1];
   const remaining = scopeNow - doneNow;
-  // La période en cours n'est pas terminée : la compter tirerait le rythme vers le bas.
-  const full = actual > 1 ? flow.completed.slice(0, -1) : flow.completed;
-  const recent = full.slice(-Math.min(FORECAST_WINDOW, full.length));
-  const rate = Math.round((recent.reduce((a, b) => a + b, 0) / recent.length) * 10) / 10;
+  // Les périodes d'avant la première tâche terminée (projet pas encore démarré) ne disent rien du
+  // rythme : les compter tirerait la prévision vers le bas.
+  const firstDone = flow.completed.findIndex((n) => n > 0);
+  const average = (values: number[]) =>
+    values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+  let rateRaw = 0;
+  if (firstDone >= 0) {
+    // La période en cours n'est pas terminée : on ne la compte que si, même partielle, elle dépasse
+    // déjà le rythme des périodes complètes (sinon elle le tirerait artificiellement vers le bas).
+    const full = flow.completed.slice(firstDone, actual - 1);
+    const recentFull = full.slice(-FORECAST_WINDOW);
+    const withCurrent = flow.completed.slice(firstDone).slice(-FORECAST_WINDOW);
+    rateRaw = Math.max(average(recentFull), average(withCurrent));
+  }
+  const rate = Math.round(rateRaw * 10) / 10;
 
   const result: Burnup = {
     unit: flow.unit,
