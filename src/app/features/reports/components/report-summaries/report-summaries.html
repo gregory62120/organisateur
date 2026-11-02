@@ -1,0 +1,110 @@
+<div class="bar">
+  <label class="search">
+    <span class="material-symbols-outlined">search</span>
+    <input
+      type="search"
+      placeholder="Rechercher un résumé…"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </label>
+
+  <select
+    aria-label="Filtrer par étiquette"
+    [value]="labelFilter()"
+    (change)="labelFilter.set($any($event.target).value)"
+  >
+    <option value="">Toutes les étiquettes</option>
+    @for (label of labels(); track label) {
+      <option [value]="label">{{ label }}</option>
+    }
+  </select>
+
+  @if (hasFilter()) {
+    <button type="button" class="btn-link" (click)="resetFilters()">Réinitialiser</button>
+  }
+
+  <span class="count">{{ total() }} résumé{{ total() > 1 ? 's' : '' }}</span>
+
+  <button type="button" class="btn-primary" (click)="create()">
+    <span class="material-symbols-outlined">add</span>
+    Nouveau résumé
+  </button>
+</div>
+
+@if (items().length) {
+  <ul class="list">
+    @for (item of items(); track item.summary.id) {
+      <li>
+        <article
+          class="summary"
+          tabindex="0"
+          (click)="open(item.summary)"
+          (keydown.enter)="open(item.summary)"
+        >
+          <header>
+            <h3>{{ item.summary.title }}</h3>
+            <span class="actions">
+              <button type="button" title="Modifier" (click)="edit(item.summary, $event)">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button
+                type="button"
+                class="danger"
+                title="Supprimer"
+                (click)="remove(item.summary, $event)"
+              >
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </span>
+          </header>
+
+          <p class="meta">
+            <span class="chip">{{ item.summary.label }}</span>
+            Modifié le {{ formatDate(item.summary.updatedAt) }}
+          </p>
+
+          <p class="excerpt">{{ item.excerpt || 'Aucun texte.' }}</p>
+
+          <footer>
+            <span class="figure">
+              <span class="material-symbols-outlined">check_circle</span>
+              {{ item.summary.stats.done }}/{{ item.summary.stats.total }} terminées ({{
+                item.summary.stats.completionRate
+              }}
+              %)
+            </span>
+            @if (item.summary.charts?.length && item.summary.snapshot) {
+              <span class="figure charts-count">
+                <span class="material-symbols-outlined">bar_chart</span>
+                {{ item.summary.charts!.length }} graphique{{
+                  item.summary.charts!.length > 1 ? 's' : ''
+                }}
+              </span>
+            }
+            @if (item.summary.stats.overdue) {
+              <span class="figure late">
+                <span class="material-symbols-outlined">warning</span>
+                {{ item.summary.stats.overdue }} en retard
+              </span>
+            }
+          </footer>
+        </article>
+      </li>
+    }
+  </ul>
+} @else {
+  <section class="empty">
+    <span class="material-symbols-outlined">edit_note</span>
+    @if (hasFilter()) {
+      <h2>Aucun résumé ne correspond</h2>
+      <p>Modifiez la recherche ou l'étiquette.</p>
+    } @else {
+      <h2>Aucun résumé pour le moment</h2>
+      <p>
+        Rédigez un résumé depuis l'analyse d'une étiquette, ou avec « Nouveau résumé » : il sera
+        enregistré et vous pourrez le retrouver, le modifier ou le supprimer ici.
+      </p>
+    }
+  </section>
+}

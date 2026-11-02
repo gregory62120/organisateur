@@ -9,18 +9,12 @@ import {
   initials,
   isOverdue,
   PRIORITY_LABELS,
+  STATUS_COLORS,
   STATUS_LABELS,
   STATUSES,
 } from '../../core/models/task-labels';
 import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  TODO: '#9aa8c7',
-  IN_PROGRESS: '#2f6bff',
-  VALIDATION: '#ff9f1a',
-  DONE: '#19b36b',
-};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

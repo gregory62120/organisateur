@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DocumentService } from './document.service';
 import { EVENTS_FILE, EventService } from './event.service';
+import { SUMMARIES_FILE, SummaryService } from './summary.service';
 import { MUSIC_PLAN_FILE, MusicPlanService } from './music-plan.service';
 import { MUSIC_FILE, MusicService } from './music.service';
 import { StorageService } from './storage.service';
@@ -22,9 +23,10 @@ export class GithubSyncService {
   private readonly eventService = inject(EventService);
   private readonly musicService = inject(MusicService);
   private readonly musicPlanService = inject(MusicPlanService);
+  private readonly summaryService = inject(SummaryService);
 
   /**
-   * Fichiers qui n'existent qu'une fois utilisés (évènements, musique, planification) : ils sont synchronisés
+   * Fichiers qui n'existent qu'une fois utilisés (évènements, musique, planification, résumés) : ils sont synchronisés
    * s'ils sont présents, et leur absence n'empêche pas la synchronisation.
    */
   private readonly optionalFiles: { path: string; apply: (json: string) => void }[] = [
@@ -33,6 +35,10 @@ export class GithubSyncService {
     {
       path: MUSIC_PLAN_FILE,
       apply: (json) => this.musicPlanService.updateSlots(JSON.parse(json)),
+    },
+    {
+      path: SUMMARIES_FILE,
+      apply: (json) => this.summaryService.updateSummaries(JSON.parse(json)),
     },
   ];
 

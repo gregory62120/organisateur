@@ -4,6 +4,7 @@ import {
   taskGroup,
   toggleArchived,
   toggleSprint,
+  trackCompletion,
   uniqueAssignees,
 } from './task-state';
 
@@ -97,5 +98,52 @@ describe('task-state', () => {
     ]);
 
     expect(assignees).toEqual(['Alice', 'Sophie']);
+  });
+
+  describe('trackCompletion', () => {
+    const now = new Date('2026-10-30T10:00:00.000Z');
+
+    it('date la fin quand la tâche passe à terminé', () => {
+      const done = trackCompletion(makeTask(), makeTask({ status: 'DONE' }), now);
+
+      expect(done.completedAt).toBe('2026-10-30T10:00:00.000Z');
+    });
+
+    it('date la fin d’une nouvelle tâche déjà terminée', () => {
+      expect(trackCompletion(undefined, makeTask({ status: 'DONE' }), now).completedAt).toBe(
+        '2026-10-30T10:00:00.000Z',
+      );
+      expect(trackCompletion(undefined, makeTask(), now).completedAt).toBeUndefined();
+    });
+
+    it('conserve la date d’origine tant que la tâche reste terminée', () => {
+      const before = makeTask({ status: 'DONE', completedAt: '2026-10-01T08:00:00.000Z' });
+
+      const after = trackCompletion(before, { ...before, title: 'Renommée' }, now);
+
+      expect(after.completedAt).toBe('2026-10-01T08:00:00.000Z');
+    });
+
+    it('ne date pas une tâche terminée avant l’introduction de la date', () => {
+      const legacy = makeTask({ status: 'DONE' });
+
+      expect(trackCompletion(legacy, { ...legacy }, now).completedAt).toBeUndefined();
+    });
+
+    it('retire la date quand la tâche est rouverte', () => {
+      const before = makeTask({ status: 'DONE', completedAt: '2026-10-01T08:00:00.000Z' });
+
+      const reopened = trackCompletion(before, { ...before, status: 'IN_PROGRESS' }, now);
+
+      expect(reopened.completedAt).toBeUndefined();
+    });
+
+    it('ne modifie pas la tâche d’origine', () => {
+      const next = makeTask({ status: 'DONE' });
+
+      trackCompletion(makeTask(), next, now);
+
+      expect(next.completedAt).toBeUndefined();
+    });
   });
 });

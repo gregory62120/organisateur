@@ -42,3 +42,19 @@ export function uniqueAssignees(tasks: Task[]): string[] {
     .filter((a): a is string => !!a)
     .sort((a, b) => a.localeCompare(b));
 }
+
+/**
+ * Tient à jour la date de fin : posée quand la tâche passe à « Terminé », retirée quand elle en sort,
+ * conservée sinon. `previous` est l'état avant la modification (absent pour une nouvelle tâche).
+ */
+export function trackCompletion(previous: Task | undefined, next: Task, now = new Date()): Task {
+  const wasDone = previous?.status === 'DONE';
+  const isDone = next.status === 'DONE';
+  if (isDone && !wasDone) {
+    return { ...next, completedAt: now.toISOString() };
+  }
+  if (!isDone && wasDone) {
+    return { ...next, completedAt: undefined };
+  }
+  return next;
+}
