@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { reportsGuard } from './core/guards/reports.guard';
 import { MainLayout } from './layout/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -28,6 +29,17 @@ export const routes: Routes = [
       {
         path: 'gantt',
         loadComponent: () => import('./features/gantt/gantt').then((c) => c.GanttComponent),
+      },
+      {
+        path: 'reports',
+        canActivate: [reportsGuard],
+        loadComponent: () => import('./features/reports/reports').then((c) => c.ReportsComponent),
+      },
+
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings').then((c) => c.SettingsComponent),
       },
       {
         path: 'documents',

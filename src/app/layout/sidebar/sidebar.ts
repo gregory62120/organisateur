@@ -1,7 +1,8 @@
-import { Component, effect, inject, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, OnInit } from '@angular/core';
 
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { GithubSyncService } from '../../core/services/github-sync.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { StorageService } from '../../core/services/storage.service';
 
 @Component({
@@ -31,49 +32,25 @@ export class Sidebar {
 
   readonly pulling = this.githubSync.pulling;
 
-  menu = [
-    {
-      label: 'Dashboard',
-      icon: 'dashboard',
-      url: '/dashboard',
-    },
+  private readonly settings = inject(SettingsService);
 
-    {
-      label: 'Kanban',
-      icon: 'view_kanban',
-      url: '/kanban',
-    },
-
-    {
-      label: 'Calendrier',
-      icon: 'calendar_month',
-      url: '/calendar',
-    },
-
-    {
-      label: 'Gantt',
-      icon: 'timeline',
-      url: '/gantt',
-    },
-
-    {
-      label: 'Documents',
-      icon: 'folder',
-      url: '/documents',
-    },
-
-    {
-      label: 'Recherche',
-      icon: 'search',
-      url: '/search',
-    },
-
-    {
-      label: 'Equipe',
-      icon: 'group',
-      url: '/users',
-    },
-  ];
+  /** Entrées du menu ; « Rapports » n'apparaît que si l'option est activée dans les paramètres. */
+  readonly menu = computed(() => {
+    const reports = this.settings.reportsEnabled()
+      ? [{ label: 'Rapports', icon: 'monitoring', url: '/reports' }]
+      : [];
+    return [
+      { label: 'Dashboard', icon: 'dashboard', url: '/dashboard' },
+      { label: 'Kanban', icon: 'view_kanban', url: '/kanban' },
+      { label: 'Calendrier', icon: 'calendar_month', url: '/calendar' },
+      { label: 'Gantt', icon: 'timeline', url: '/gantt' },
+      ...reports,
+      { label: 'Documents', icon: 'folder', url: '/documents' },
+      { label: 'Recherche', icon: 'search', url: '/search' },
+      { label: 'Equipe', icon: 'group', url: '/users' },
+      { label: 'Paramètres', icon: 'settings', url: '/settings' },
+    ];
+  });
 
   constructor() {
     this.loadConfig();

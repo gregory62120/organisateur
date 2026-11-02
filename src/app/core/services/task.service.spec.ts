@@ -213,4 +213,35 @@ describe('TaskService', () => {
       expect(service.projectProgress()).toBe(38);
     });
   });
+
+  describe('date de fin', () => {
+    it('est posée quand une tâche passe à terminé depuis le formulaire, puis retirée à la réouverture', async () => {
+      await service.add(task('a'));
+
+      await service.update({ ...service.tasksSignal()[0], status: 'DONE' });
+      expect(saved()[0].completedAt).toEqual(expect.any(String));
+
+      await service.update({ ...service.tasksSignal()[0], status: 'TODO' });
+      expect(saved()[0].completedAt).toBeUndefined();
+    });
+
+    it('est posée quand on déplace une tâche vers la colonne terminé', async () => {
+      await service.add(task('a'));
+      await service.add(task('b'));
+
+      await service.moveTo('a', 'DONE', 0);
+      await service.move('b', 'DONE');
+
+      expect(saved().map((t) => !!t.completedAt)).toEqual([true, true]);
+    });
+
+    it('reste inchangée quand on modifie une tâche déjà terminée', async () => {
+      await service.add(task('a', { status: 'DONE' }));
+      const before = saved()[0].completedAt;
+
+      await service.update({ ...service.tasksSignal()[0], title: 'Autre titre' });
+
+      expect(saved()[0].completedAt).toBe(before);
+    });
+  });
 });

@@ -1,0 +1,67 @@
+<section class="kpis">
+  @for (kpi of kpis(); track kpi.label) {
+    <article class="card kpi" [attr.data-tone]="kpi.tone">
+      <span class="icon"
+        ><span class="material-symbols-outlined">{{ kpi.icon }}</span></span
+      >
+      <div>
+        <p class="kpi-label">{{ kpi.label }}</p>
+        <p class="kpi-value">
+          {{ kpi.value }}
+          @if (kpi.hint) {
+            <span class="kpi-hint">{{ kpi.hint }}</span>
+          }
+        </p>
+      </div>
+    </article>
+  }
+</section>
+
+<app-report-charts [snapshot]="snapshot()" />
+
+<section class="card table-card">
+  <header>
+    <h2>Tâches « {{ label() }} »</h2>
+    <span class="hint">{{ rows().length }} au total</span>
+  </header>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tâche</th>
+          <th>Statut</th>
+          <th>Priorité</th>
+          <th>Responsable</th>
+          <th>Échéance</th>
+          <th>Terminée le</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.task.id) {
+          <tr [class.archived]="row.task.archived">
+            <td class="title">
+              {{ row.task.title }}
+              @if (row.task.archived) {
+                <span class="tag">archivée</span>
+              }
+            </td>
+            <td>
+              <span class="badge" [attr.data-status]="row.task.status">
+                {{ statusLabels[row.task.status] }}
+              </span>
+            </td>
+            <td>
+              <span class="prio" [attr.data-priority]="row.task.priority">
+                {{ priorityLabels[row.task.priority] }}
+              </span>
+            </td>
+            <td>{{ row.task.assignedTo || '—' }}</td>
+            <td>{{ formatDate(row.task.dueDate) || '—' }}</td>
+            <td>{{ doneLabel(row.doneAt) || '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

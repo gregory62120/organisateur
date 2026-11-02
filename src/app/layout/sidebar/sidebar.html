@@ -4,7 +4,7 @@
 </div>
 
 <nav class="menu">
-  @for (item of menu; track item.url) {
+  @for (item of menu(); track item.url) {
     <a [routerLink]="item.url" routerLinkActive="active">
       <span class="material-symbols-outlined">{{ item.icon }}</span>
       <span class="label">{{ item.label }}</span>

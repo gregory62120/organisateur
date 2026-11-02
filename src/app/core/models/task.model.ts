@@ -61,6 +61,9 @@ export interface Task {
 
   archivedAt?: string;
 
+  /** Date à laquelle la tâche est passée à « Terminé » ; absente pour les tâches terminées avant son introduction. */
+  completedAt?: string;
+
   createdAt: string;
 
   updatedAt: string;

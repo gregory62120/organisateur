@@ -1,0 +1,45 @@
+<header class="page-head">
+  <div>
+    <h1>Paramètres</h1>
+    <p class="subtitle">Choisissez les sections de l'application que vous voulez utiliser.</p>
+  </div>
+</header>
+
+<section class="card">
+  <h2>Sections optionnelles</h2>
+
+  <div class="option">
+    <span class="icon"><span class="material-symbols-outlined">monitoring</span></span>
+
+    <div class="text">
+      <label for="reports-switch" class="name">Rapports</label>
+      <p>
+        Ajoute une section « Rapports » au menu de gauche : l'analyse de toutes les tâches portant
+        une même étiquette (avancement, montée en charge, répartition) et des résumés que vous
+        rédigez, enregistrez et retrouvez plus tard.
+      </p>
+      @if (settings.reportsEnabled()) {
+        <a routerLink="/reports" class="open">
+          Ouvrir les rapports
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </a>
+      }
+    </div>
+
+    <label class="switch">
+      <input
+        id="reports-switch"
+        type="checkbox"
+        role="switch"
+        [checked]="settings.reportsEnabled()"
+        (change)="toggleReports($event)"
+      />
+      <span class="track"><span class="thumb"></span></span>
+    </label>
+  </div>
+
+  <p class="note">
+    <span class="material-symbols-outlined">info</span>
+    Ce réglage est mémorisé dans ce navigateur. Il n'est pas enregistré dans le projet.
+  </p>
+</section>
