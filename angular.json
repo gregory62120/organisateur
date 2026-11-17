@@ -55,6 +55,27 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "docs": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "16kB"
+                }
+              ],
+              "outputHashing": "all",
+              "outputPath": {
+                "base": "docs",
+                "browser": ""
+              },
+              "baseHref": "/organisateur/",
+              "deleteOutputPath": true
             }
           },
           "defaultConfiguration": "production"
