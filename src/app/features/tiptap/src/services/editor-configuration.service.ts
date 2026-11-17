@@ -204,6 +204,16 @@ export class EditorConfigurationService {
     }
 
     customs.push({
+      title: 'Tableau blanc',
+      description: 'Insérer un grand tableau blanc à points (plein écran possible)',
+      icon: 'draw',
+      keywords: ['tableau', 'blanc', 'whiteboard', 'board', 'dessin'],
+      command: (editor: Editor) => {
+        editor.chain().focus().insertWhiteboard().run();
+      },
+    });
+
+    customs.push({
       title: 'Dessin',
       description: 'Insérer une zone de dessin',
       icon: 'draw',
