@@ -241,7 +241,12 @@
                       (click)="open(slot.event, $event)"
                       (dblclick)="$event.stopPropagation()"
                     >
-                      <span class="slot-title">{{ slot.event.title }}</span>
+                      <span class="slot-title">
+                        @if (slot.event.kind === 'work') {
+                          <span class="material-symbols-outlined slot-icon">work_history</span>
+                        }
+                        {{ slot.event.title }}
+                      </span>
                       <span class="slot-time">{{ slot.event.time }}</span>
                     </button>
                   }
@@ -313,8 +318,12 @@
               <button
                 type="button"
                 class="agenda-item"
-                [attr.data-priority]="event.kind === 'event' ? null : event.priority"
-                [attr.data-color]="event.kind === 'event' ? event.color : null"
+                [attr.data-priority]="
+                  event.kind === 'event' || event.kind === 'work' ? null : event.priority
+                "
+                [attr.data-color]="
+                  event.kind === 'event' || event.kind === 'work' ? event.color : null
+                "
                 [class.done]="event.done"
                 (click)="open(event)"
               >
@@ -322,7 +331,10 @@
                 <span class="body">
                   <span class="name">{{ event.title }}</span>
                   <span class="meta">
-                    @if (event.kind === 'event') {
+                    @if (event.kind === 'work') {
+                      <span class="material-symbols-outlined meta-icon">work_history</span>
+                      Prévu : {{ event.time ?? 'toute la journée' }}
+                    } @else if (event.kind === 'event') {
                       <span class="material-symbols-outlined meta-icon">schedule</span>
                       {{ event.time ?? 'Toute la journée' }}
                     } @else if (event.kind === 'subtask') {
@@ -367,8 +379,12 @@
               <button
                 type="button"
                 class="agenda-item"
-                [attr.data-priority]="event.kind === 'event' ? null : event.priority"
-                [attr.data-color]="event.kind === 'event' ? event.color : null"
+                [attr.data-priority]="
+                  event.kind === 'event' || event.kind === 'work' ? null : event.priority
+                "
+                [attr.data-color]="
+                  event.kind === 'event' || event.kind === 'work' ? event.color : null
+                "
                 (click)="open(event)"
               >
                 <span class="date-badge">{{ relativeDay(event.date) }}</span>
@@ -396,9 +412,9 @@
   <button
     type="button"
     class="chip"
-    [attr.data-priority]="event.kind === 'event' ? null : event.priority"
-    [attr.data-color]="event.kind === 'event' ? event.color : null"
-    [class.event]="event.kind === 'event'"
+    [attr.data-priority]="event.kind === 'event' || event.kind === 'work' ? null : event.priority"
+    [attr.data-color]="event.kind === 'event' || event.kind === 'work' ? event.color : null"
+    [class.event]="event.kind === 'event' || event.kind === 'work'"
     [class.done]="event.done"
     [class.overdue]="event.overdue"
     [class.subtask]="event.kind === 'subtask'"
@@ -408,6 +424,8 @@
     <span class="material-symbols-outlined">{{ chipIcon(event) }}</span>
     @if (event.kind === 'event' && event.time) {
       <span class="time">{{ event.projectEvent.startTime }}</span>
+    } @else if (event.kind === 'work' && event.startTime) {
+      <span class="time">{{ event.startTime }}</span>
     }
     <span class="label">{{ event.title }}</span>
   </button>

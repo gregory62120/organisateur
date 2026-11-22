@@ -168,24 +168,29 @@ export class CalendarComponent {
 
   readonly selectedEvents = computed(() => this.byDay().get(this.selected()) ?? []);
 
-  readonly overdueCount = computed(() => this.events().filter((e) => e.overdue).length);
+  /** Les créneaux de travail planifiés ne comptent pas parmi les échéances. */
+  private readonly deadlines = computed<CalendarEvent[]>(() =>
+    this.events().filter((e) => e.kind !== 'work'),
+  );
+
+  readonly overdueCount = computed(() => this.deadlines().filter((e) => e.overdue).length);
 
   readonly weekCount = computed(() => {
     const start = this.gantt.startOfWeek(this.startOfToday());
     const [from, to] = [this.gantt.toIso(start), this.gantt.toIso(this.gantt.addDays(start, 6))];
-    return this.events().filter((e) => !e.done && e.date >= from && e.date <= to).length;
+    return this.deadlines().filter((e) => !e.done && e.date >= from && e.date <= to).length;
   });
 
   readonly monthCount = computed(() => {
     const today = this.startOfToday();
     const prefix = this.gantt.toIso(today).slice(0, 7);
-    return this.events().filter((e) => !e.done && e.date.startsWith(prefix)).length;
+    return this.deadlines().filter((e) => !e.done && e.date.startsWith(prefix)).length;
   });
 
   /** Les prochaines échéances à faire, à partir d'aujourd'hui. */
   readonly upcoming = computed(() => {
     const today = this.gantt.toIso(this.startOfToday());
-    return this.events()
+    return this.deadlines()
       .filter((e) => !e.done && e.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'fr'))
       .slice(0, 6);
@@ -237,6 +242,8 @@ export class CalendarComponent {
     domEvent?.stopPropagation();
     if (event.kind === 'event') {
       this.eventDialogs.edit(event.projectEvent);
+    } else if (event.kind === 'work') {
+      this.dialogs.openTask(event.task);
     } else if (event.kind === 'subtask' && event.subtaskId) {
       this.dialogs.openSubtask(event.task, event.subtaskId);
     } else {
@@ -286,6 +293,7 @@ export class CalendarComponent {
   chipIcon(event: CalendarEvent): string {
     if (event.done) return 'check_circle';
     if (event.overdue) return 'error';
+    if (event.kind === 'work') return 'work_history';
     if (event.kind === 'event') return event.time ? 'schedule' : 'event';
     return event.kind === 'subtask' ? 'subdirectory_arrow_right' : 'flag';
   }
