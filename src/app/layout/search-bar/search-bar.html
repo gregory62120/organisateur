@@ -1,0 +1,45 @@
+<div class="search">
+  <span class="material-symbols-outlined search-icon">search</span>
+  <input
+    type="search"
+    placeholder="Rechercher…"
+    aria-label="Recherche"
+    [value]="query()"
+    (focus)="onFocus()"
+    (input)="onInput($any($event.target).value)"
+    (keydown)="onKeydown($event)"
+  />
+
+  @if (open() && query().trim().length >= 2) {
+    <div
+      class="panel"
+      role="listbox"
+      [style.top.px]="panelPos().top"
+      [style.left.px]="panelPos().left"
+    >
+      @for (group of groups(); track group.label) {
+        <div class="group-title">{{ group.label }}</div>
+        @for (entry of group.items; track entry.index) {
+          <button
+            type="button"
+            class="item"
+            role="option"
+            [class.active]="entry.index === active()"
+            (mouseenter)="active.set(entry.index)"
+            (click)="select(entry.result)"
+          >
+            <span class="material-symbols-outlined">{{ group.icon }}</span>
+            <span class="text">
+              <span class="title">{{ entry.result.title || 'Sans titre' }}</span>
+              @if (entry.result.description) {
+                <span class="desc">{{ entry.result.description }}</span>
+              }
+            </span>
+          </button>
+        }
+      } @empty {
+        <div class="empty">Aucun résultat</div>
+      }
+    </div>
+  }
+</div>

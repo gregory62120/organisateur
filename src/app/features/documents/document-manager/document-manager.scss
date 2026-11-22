@@ -1,0 +1,33 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 8px;
+  font-size: 14px;
+
+  button {
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--tf-primary);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--tf-bg);
+    }
+  }
+
+  .current {
+    padding: 2px 6px;
+    color: var(--tf-text);
+    font-weight: 600;
+  }
+
+  .sep {
+    font-size: 18px;
+    color: var(--tf-muted);
+  }
+}
