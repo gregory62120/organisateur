@@ -1,12 +1,18 @@
-import { Component, computed, ElementRef, HostListener, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  HostListener,
+  inject,
+  Injector,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { SearchResult, SearchResultType } from '../../core/models/search-result.model';
 import { DocumentService } from '../../core/services/document.service';
 import { EventService } from '../../core/services/event.service';
 import { SearchService } from '../../core/services/search.service';
 import { TaskService } from '../../core/services/task.service';
-import { EventDialogService } from '../../features/calendar/services/event-dialog.service';
-import { TaskDialogService } from '../../features/kanban/services/task-dialog.service';
 
 const TYPE_META: Record<SearchResultType, { label: string; icon: string }> = {
   document: { label: 'Documents', icon: 'description' },
@@ -26,8 +32,7 @@ export class SearchBar {
   private readonly tasks = inject(TaskService);
   private readonly events = inject(EventService);
   private readonly documents = inject(DocumentService);
-  private readonly taskDialogs = inject(TaskDialogService);
-  private readonly eventDialogs = inject(EventDialogService);
+  private readonly injector = inject(Injector);
 
   readonly query = signal('');
   readonly open = signal(false);
@@ -99,13 +104,18 @@ export class SearchBar {
       const task = this.tasks.tasksSignal().find((item) => item.id === result.id);
       await this.router.navigate(['/kanban']);
       if (task) {
-        this.taskDialogs.openTask(task);
+        // Chargé à la demande : ces fenêtres ne doivent pas alourdir le bundle initial.
+        const { TaskDialogService } =
+          await import('../../features/kanban/services/task-dialog.service');
+        this.injector.get(TaskDialogService).openTask(task);
       }
     } else {
       const event = this.events.eventsSignal().find((item) => item.id === result.id);
       await this.router.navigate(['/calendar']);
       if (event) {
-        this.eventDialogs.edit(event);
+        const { EventDialogService } =
+          await import('../../features/calendar/services/event-dialog.service');
+        this.injector.get(EventDialogService).edit(event);
       }
     }
   }
