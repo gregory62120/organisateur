@@ -53,6 +53,20 @@ export class TaskDialogComponent {
 
   readonly dueDate = signal(this.initial.dueDate ?? '');
 
+  readonly estimateHours = signal(
+    this.initial.estimateHours ? String(this.initial.estimateHours) : '',
+  );
+
+  readonly workStart = signal(this.initial.workStart ?? '');
+
+  readonly workEnd = signal(this.initial.workEnd ?? '');
+
+  readonly workStartTime = signal(this.initial.workStartTime ?? '');
+
+  readonly workEndTime = signal(this.initial.workEndTime ?? '');
+
+  readonly planIgnored = signal(this.initial.planIgnored === true);
+
   readonly assignedTo = signal(this.initial.assignedTo ?? '');
 
   readonly tags = signal<string[]>([...(this.initial.tags ?? [])]);
@@ -114,6 +128,14 @@ export class TaskDialogComponent {
     this.checklist.update((items) => items.filter((i) => i.id !== id));
   }
 
+  /** Retire la prise en charge : la tâche disparaît du calendrier et du plan planifié. */
+  unplan() {
+    this.workStart.set('');
+    this.workEnd.set('');
+    this.workStartTime.set('');
+    this.workEndTime.set('');
+  }
+
   save() {
     this.addTag();
     this.addSubtask();
@@ -125,6 +147,15 @@ export class TaskDialogComponent {
       priority: this.priority(),
       startDate: this.startDate() || undefined,
       dueDate: this.dueDate() || undefined,
+      estimateHours:
+        Number(this.estimateHours().replace(',', '.')) > 0
+          ? Number(this.estimateHours().replace(',', '.'))
+          : undefined,
+      workStart: this.workStart() || undefined,
+      workEnd: this.workEnd() || undefined,
+      workStartTime: this.workStartTime() || undefined,
+      workEndTime: this.workEndTime() || undefined,
+      planIgnored: this.planIgnored() || undefined,
       assignedTo: this.assignedTo().trim() || undefined,
       tags: this.tags(),
       checklist: this.checklist().filter((i) => i.label.trim()),

@@ -1,0 +1,261 @@
+<section class="planner card">
+  <header>
+    <div>
+      <h2>
+        <span class="material-symbols-outlined">auto_awesome</span>
+        Plan suggéré
+      </h2>
+      <p class="source">{{ sourceLabel() }}</p>
+    </div>
+
+    <div class="controls">
+      <label>
+        Pour
+        <select [value]="assignee()" (change)="setAssignee($any($event.target).value)">
+          <option value="">Tout le monde</option>
+          @for (name of assignees(); track name) {
+            <option [value]="name" [selected]="name === assignee()">{{ name }}</option>
+          }
+        </select>
+      </label>
+      <button
+        type="button"
+        class="hours-toggle"
+        [class.on]="scheduleOpen()"
+        (click)="scheduleOpen.set(!scheduleOpen())"
+      >
+        <span class="material-symbols-outlined">schedule</span>
+        Mes horaires
+      </button>
+      <label>
+        Sur
+        <select [value]="horizon()" (change)="horizon.set(+$any($event.target).value)">
+          <option value="1" [selected]="horizon() === 1">Aujourd'hui</option>
+          <option value="3" [selected]="horizon() === 3">3 jours</option>
+          <option value="5" [selected]="horizon() === 5">5 jours</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  @if (scheduleOpen()) {
+    <div class="schedule">
+      <p class="hint">
+        Indiquez vos horaires et vos pauses : le plan se recalcule et place les tâches dans les
+        plages libres. Un horaire propre à un jour remplace celui par défaut.
+      </p>
+      <ng-container
+        *ngTemplateOutlet="
+          editor;
+          context: { key: null, label: 'Par défaut', value: schedule.defaults() }
+        "
+      />
+      @for (day of plan().days; track day.date; let i = $index) {
+        <ng-container
+          *ngTemplateOutlet="
+            editor;
+            context: { key: day.date, label: label(day.date, i), value: schedule.forDay(day.date) }
+          "
+        />
+      }
+    </div>
+  }
+
+  @for (insight of plan().insights; track insight) {
+    <p class="insight">
+      <span class="material-symbols-outlined">lightbulb</span>
+      {{ insight }}
+    </p>
+  }
+
+  <div class="days">
+    @for (day of plan().days; track day.date; let i = $index) {
+      <article class="day">
+        <header>
+          <h3>{{ label(day.date, i) }}</h3>
+          @if (day.off) {
+            <span class="load">Jour off</span>
+          } @else {
+            <span class="load" [class.over]="day.hours > day.capacity">
+              {{ day.hours }} h / {{ day.capacity }} h
+            </span>
+          }
+        </header>
+
+        <ul>
+          @for (item of day.items; track item.task.id) {
+            <li class="row">
+              <button type="button" class="task" (click)="open(item.task)">
+                <span class="flag" [attr.data-priority]="item.task.priority"></span>
+                <span class="body">
+                  <span class="title">{{ item.task.title }}</span>
+                  <span class="reasons">
+                    @for (reason of item.reasons; track reason) {
+                      <span class="chip">{{ reason }}</span>
+                    }
+                  </span>
+                </span>
+                <span class="hours">
+                  <b>{{ item.start }} – {{ item.end }}</b>
+                  <span>{{ item.hours }} h</span>
+                </span>
+              </button>
+              @if (isItemCommitted(item, day)) {
+                <button
+                  type="button"
+                  class="ignore"
+                  title="Déplanifier cette tâche"
+                  (click)="unplan(item.task)"
+                >
+                  <span class="material-symbols-outlined">event_busy</span>
+                </button>
+              }
+              <button
+                type="button"
+                class="ignore"
+                title="Ne pas proposer cette tâche dans le plan"
+                (click)="ignore(item.task)"
+              >
+                <span class="material-symbols-outlined">visibility_off</span>
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">Rien de prévu.</li>
+          }
+        </ul>
+
+        @if (day.items.length > 0) {
+          @if (isCommitted(day)) {
+            <button type="button" class="commit" (click)="uncommit(day)">
+              <span class="material-symbols-outlined">event_busy</span>
+              Déplanifier ce jour
+            </button>
+          } @else {
+            <button type="button" class="commit" (click)="commit(day)">
+              <span class="material-symbols-outlined">event_available</span>
+              Planifier ce jour
+            </button>
+          }
+        }
+      </article>
+    }
+  </div>
+
+  @if (plan().later.length > 0) {
+    <details class="later">
+      <summary>{{ plan().later.length }} tâche(s) pour plus tard</summary>
+      <ul>
+        @for (item of plan().later; track item.task.id) {
+          <li class="row">
+            <button type="button" class="task" (click)="open(item.task)">
+              <span class="flag" [attr.data-priority]="item.task.priority"></span>
+              <span class="body"
+                ><span class="title">{{ item.task.title }}</span></span
+              >
+              <span class="hours">{{ item.hours }} h</span>
+            </button>
+            <button
+              type="button"
+              class="ignore"
+              title="Ne pas proposer cette tâche dans le plan"
+              (click)="ignore(item.task)"
+            >
+              <span class="material-symbols-outlined">visibility_off</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+
+  @if (plan().ignored.length > 0) {
+    <details class="later">
+      <summary>{{ plan().ignored.length }} tâche(s) écartée(s) du plan</summary>
+      <ul>
+        @for (task of plan().ignored; track task.id) {
+          <li class="row">
+            <button type="button" class="task" (click)="open(task)">
+              <span class="flag" [attr.data-priority]="task.priority"></span>
+              <span class="body"
+                ><span class="title">{{ task.title }}</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="ignore"
+              title="Remettre dans le plan"
+              (click)="restore(task)"
+            >
+              <span class="material-symbols-outlined">visibility</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</section>
+
+<ng-template #editor let-key="key" let-label="label" let-value="value">
+  <div class="sched-row" [class.custom]="key && schedule.hasOverride(key)">
+    <strong class="sched-label">{{ label }}</strong>
+
+    <label class="off">
+      <input
+        type="checkbox"
+        [checked]="value.off"
+        (change)="schedule.setOff(key, $any($event.target).checked)"
+      />
+      Jour off
+    </label>
+
+    @if (!value.off) {
+      <span class="range">
+        <input
+          type="time"
+          [value]="value.start"
+          (change)="schedule.setTime(key, 'start', $any($event.target).value)"
+        />
+        →
+        <input
+          type="time"
+          [value]="value.end"
+          (change)="schedule.setTime(key, 'end', $any($event.target).value)"
+        />
+      </span>
+
+      @for (pause of value.breaks; track $index; let b = $index) {
+        <span class="range pause">
+          <span class="material-symbols-outlined">free_breakfast</span>
+          <input
+            type="time"
+            [value]="pause.start"
+            (change)="schedule.setBreak(key, b, 'start', $any($event.target).value)"
+          />
+          →
+          <input
+            type="time"
+            [value]="pause.end"
+            (change)="schedule.setBreak(key, b, 'end', $any($event.target).value)"
+          />
+          <button
+            type="button"
+            class="mini"
+            title="Supprimer la pause"
+            (click)="schedule.removeBreak(key, b)"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </span>
+      }
+      <button type="button" class="mini text" (click)="schedule.addBreak(key)">
+        <span class="material-symbols-outlined">add</span> Pause
+      </button>
+    }
+
+    @if (key && schedule.hasOverride(key)) {
+      <button type="button" class="mini text" (click)="schedule.reset(key)">
+        Revenir au défaut
+      </button>
+    }
+  </div>
+</ng-template>

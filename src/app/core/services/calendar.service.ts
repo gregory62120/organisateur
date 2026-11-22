@@ -35,11 +35,27 @@ export interface ProjectCalendarEvent extends BaseCalendarEvent {
   time?: string;
 }
 
-export type CalendarEvent = TaskCalendarEvent | ProjectCalendarEvent;
+/** Créneau de travail prévu sur une tâche (« Prise en charge » posée par le plan du jour). */
+export interface WorkCalendarEvent extends BaseCalendarEvent {
+  kind: 'work';
+  task: Task;
+  priority: Priority;
+  status: TaskStatus;
+  color: EventColor;
+  startTime?: string;
+  endTime?: string;
+  /** « 09:00 – 11:00 » ; absent pour une prise en charge sur toute la journée. */
+  time?: string;
+}
+
+export type CalendarEvent = TaskCalendarEvent | ProjectCalendarEvent | WorkCalendarEvent;
+
+/** Élément qui occupe un créneau horaire dans la grille. */
+export type TimedCalendarEvent = ProjectCalendarEvent | WorkCalendarEvent;
 
 /** Évènement placé dans la grille horaire d'une journée ; top/height en % de la journée. */
 export interface TimedSlot {
-  event: ProjectCalendarEvent;
+  event: TimedCalendarEvent;
   top: number;
   height: number;
   /** Colonne parmi les évènements qui se chevauchent, de 0 à `lanes - 1`. */
@@ -122,6 +138,41 @@ export class CalendarService {
       }
     }
 
+    for (const task of tasks) {
+      if (taskGroup(task) === 'archived' || !task.workStart) {
+        continue;
+      }
+      const from = this.gantt.parseDay(task.workStart);
+      const to = this.gantt.parseDay(task.workEnd ?? task.workStart) ?? from;
+      if (!from || !to) {
+        continue;
+      }
+      const span = { startTime: task.workStartTime, endTime: task.workEndTime };
+      // Une période est répétée chaque jour ouvré (une journée unique est gardée même un week-end), dans la limite de 31 jours.
+      const single = from.getTime() === to.getTime();
+      for (let day = from, count = 0; day <= to && count < 31; day = this.gantt.addDays(day, 1)) {
+        if (!single && (day.getDay() === 0 || day.getDay() === 6)) {
+          continue;
+        }
+        count++;
+        events.push({
+          key: `work:${task.id}:${this.gantt.toIso(day)}`,
+          kind: 'work',
+          title: task.title,
+          date: this.gantt.toIso(day),
+          done: task.status === 'DONE',
+          overdue: false,
+          assignee: task.assignedTo,
+          task,
+          priority: task.priority,
+          status: task.status,
+          color: 'violet',
+          ...span,
+          time: this.timeLabel(span),
+        });
+      }
+    }
+
     for (const event of projectEvents) {
       const date = this.gantt.parseDay(event.date);
       if (date) {
@@ -142,23 +193,31 @@ export class CalendarService {
   }
 
   /** Vrai pour un évènement qui a une heure ; tâches et évènements sans heure durent toute la journée. */
-  isTimed(event: CalendarEvent): event is ProjectCalendarEvent {
-    return event.kind === 'event' && !!event.projectEvent.startTime;
+  isTimed(event: CalendarEvent): event is TimedCalendarEvent {
+    return this.startOf(event) !== undefined;
+  }
+
+  /** Heure de début d'un évènement ou d'un créneau de travail. */
+  private startOf(event: CalendarEvent): string | undefined {
+    if (event.kind === 'event') {
+      return event.projectEvent.startTime || undefined;
+    }
+    return event.kind === 'work' ? event.startTime || undefined : undefined;
+  }
+
+  private endOf(event: TimedCalendarEvent): string | undefined {
+    return event.kind === 'event' ? event.projectEvent.endTime : event.endTime;
   }
 
   /**
    * Place les évènements horaires d'une journée. Ceux qui se chevauchent sont mis côte à côte,
    * chacun sur sa colonne ; une fin absente vaut 1 h et une fin avant le début court jusqu'à minuit.
    */
-  layoutTimed(events: ProjectCalendarEvent[]): TimedSlot[] {
+  layoutTimed(events: TimedCalendarEvent[]): TimedSlot[] {
     const items = events.map((event) => {
-      const start = Math.min(
-        this.minutes(event.projectEvent.startTime),
-        DAY_MINUTES - MIN_DURATION,
-      );
-      const rawEnd = event.projectEvent.endTime
-        ? this.minutes(event.projectEvent.endTime)
-        : start + DEFAULT_DURATION;
+      const start = Math.min(this.minutes(this.startOf(event)), DAY_MINUTES - MIN_DURATION);
+      const endTime = this.endOf(event);
+      const rawEnd = endTime ? this.minutes(endTime) : start + DEFAULT_DURATION;
       const end = rawEnd < start ? DAY_MINUTES : rawEnd;
       return { event, start, end: Math.min(Math.max(end, start + MIN_DURATION), DAY_MINUTES) };
     });
@@ -235,11 +294,12 @@ export class CalendarService {
   }
 
   private compare(a: CalendarEvent, b: CalendarEvent): number {
-    if (a.kind === 'event' || b.kind === 'event') {
-      if (a.kind !== 'event') return 1;
-      if (b.kind !== 'event') return -1;
+    const scheduled = (e: CalendarEvent) => e.kind === 'event' || e.kind === 'work';
+    if (scheduled(a) || scheduled(b)) {
+      if (!scheduled(a)) return 1;
+      if (!scheduled(b)) return -1;
       return (
-        (a.projectEvent.startTime ?? '').localeCompare(b.projectEvent.startTime ?? '') ||
+        (this.startOf(a) ?? '').localeCompare(this.startOf(b) ?? '') ||
         a.title.localeCompare(b.title, 'fr')
       );
     }
