@@ -13,6 +13,7 @@ import {
   STATUS_LABELS,
   STATUSES,
 } from '../../core/models/task-labels';
+import { PlannerComponent } from './planner/planner';
 import { StorageService } from '../../core/services/storage.service';
 import { TaskService } from '../../core/services/task.service';
 
@@ -23,7 +24,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
   standalone: true,
 
-  imports: [BaseChartDirective, RouterLink],
+  imports: [BaseChartDirective, RouterLink, PlannerComponent],
 
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',

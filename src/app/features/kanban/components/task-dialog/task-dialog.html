@@ -41,6 +41,62 @@
   </label>
 
   <label>
+    <span>Estimation (h)</span>
+    <input
+      type="number"
+      min="0"
+      step="0.5"
+      placeholder="ex. 2"
+      [value]="estimateHours()"
+      (input)="estimateHours.set($any($event.target).value)"
+    />
+  </label>
+
+  <label>
+    <span>Prise en charge : du</span>
+    <input type="date" [value]="workStart()" (input)="workStart.set($any($event.target).value)" />
+  </label>
+
+  <label>
+    <span>Prise en charge : au</span>
+    <input type="date" [value]="workEnd()" (input)="workEnd.set($any($event.target).value)" />
+  </label>
+
+  <label>
+    <span>De (heure)</span>
+    <input
+      type="time"
+      [value]="workStartTime()"
+      (input)="workStartTime.set($any($event.target).value)"
+    />
+  </label>
+
+  <label>
+    <span>À (heure)</span>
+    <input
+      type="time"
+      [value]="workEndTime()"
+      (input)="workEndTime.set($any($event.target).value)"
+    />
+  </label>
+
+  @if (workStart() || workStartTime()) {
+    <button type="button" class="btn-secondary" (click)="unplan()">
+      <span class="material-symbols-outlined">event_busy</span>
+      Déplanifier
+    </button>
+  }
+
+  <label class="check">
+    <input
+      type="checkbox"
+      [checked]="planIgnored()"
+      (change)="planIgnored.set($any($event.target).checked)"
+    />
+    <span>Ne pas la proposer dans le plan du jour</span>
+  </label>
+
+  <label>
     <span>Responsable</span>
     <input
       type="text"

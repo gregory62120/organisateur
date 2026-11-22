@@ -48,6 +48,18 @@ export function uniqueAssignees(tasks: Task[]): string[] {
  * conservée sinon. `previous` est l'état avant la modification (absent pour une nouvelle tâche).
  */
 export function trackCompletion(previous: Task | undefined, next: Task, now = new Date()): Task {
+  return trackCompletionDate(previous, trackStart(previous, next, now), now);
+}
+
+/** Date la première prise en charge (passage à « En cours » ou plus loin), sans jamais l'écraser. */
+function trackStart(previous: Task | undefined, next: Task, now: Date): Task {
+  if (next.startedAt || next.status === 'TODO' || previous?.status === next.status) {
+    return next;
+  }
+  return { ...next, startedAt: now.toISOString() };
+}
+
+function trackCompletionDate(previous: Task | undefined, next: Task, now: Date): Task {
   const wasDone = previous?.status === 'DONE';
   const isDone = next.status === 'DONE';
   if (isDone && !wasDone) {

@@ -61,6 +61,25 @@ export interface Task {
 
   archivedAt?: string;
 
+  /** Date à laquelle la tâche a été prise en charge pour la première fois (passée « En cours »). */
+  startedAt?: string;
+
+  /** Charge estimée, en heures : sert au plan du jour. */
+  estimateHours?: number;
+
+  /** Période (YYYY-MM-DD) pendant laquelle je compte m'en occuper ; posée par « Planifier ». */
+  workStart?: string;
+
+  workEnd?: string;
+
+  /** Heures (HH:mm) de la prise en charge, posées par « Planifier » ; absentes = toute la journée. */
+  workStartTime?: string;
+
+  workEndTime?: string;
+
+  /** La tâche est écartée du plan suggéré (sans être archivée ni masquée). */
+  planIgnored?: boolean;
+
   /** Date à laquelle la tâche est passée à « Terminé » ; absente pour les tâches terminées avant son introduction. */
   completedAt?: string;
 
