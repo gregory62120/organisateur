@@ -12,6 +12,7 @@ import { DocumentService } from '../../../core/services/document.service';
 import { EditorComponent } from '../../editor/editor';
 import { FormsModule } from '@angular/forms';
 import { StorageService } from '../../../core/services/storage.service';
+import { Router } from '@angular/router';
 import { PopupService } from '../../../core/services/popup/popup';
 
 @Component({
@@ -19,11 +20,13 @@ import { PopupService } from '../../../core/services/popup/popup';
   standalone: true,
   imports: [EditorComponent, FormsModule],
   templateUrl: './document-manager.html',
+  styleUrl: './document-manager.scss',
 })
 export class DocumentManagerComponent implements OnInit {
   private readonly service = inject(DocumentService);
   private readonly storage = inject(StorageService);
   private modal = inject(PopupService);
+  private readonly router = inject(Router);
   private isInitialize: boolean = true;
 
   constructor() {
@@ -34,6 +37,26 @@ export class DocumentManagerComponent implements OnInit {
         this.reloadDocuments();
       }
     });
+  }
+
+  /** Chemin de la racine jusqu'à la page affichée, en remontant les `parentId`. */
+  readonly breadcrumb = computed(() => {
+    const pages = this.service.allPages();
+    const trail: { id: string; title: string }[] = [];
+    const seen = new Set<string>();
+    let page = pages.find((item) => item.id === this.service.currentPageId());
+    while (page && !seen.has(page.id)) {
+      seen.add(page.id);
+      trail.unshift({ id: page.id, title: this.service.pageTitle(page) || 'Sans titre' });
+      const parentId: string | null = page.parentId;
+      page = parentId ? pages.find((item) => item.id === parentId) : undefined;
+    }
+    return trail;
+  });
+
+  async openPage(id: string): Promise<void> {
+    await this.router.navigate(['/document', id]);
+    this.service.setCurrentPageId(id);
   }
 
   content = computed(() => {

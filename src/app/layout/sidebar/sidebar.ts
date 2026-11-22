@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, OnInit } from '@angular/core';
 
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { SearchBar } from '../search-bar/search-bar';
 import { GithubSyncService } from '../../core/services/github-sync.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -10,7 +11,7 @@ import { StorageService } from '../../core/services/storage.service';
 
   standalone: true,
 
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, SearchBar],
 
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss',

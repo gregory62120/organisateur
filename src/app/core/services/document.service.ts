@@ -17,6 +17,9 @@ export class DocumentService {
     return document.filter((page) => page.id == this.currentPageId());
   });
 
+  /** Toutes les pages chargées (utilisé par la recherche). */
+  readonly allPages = this.documentsState.asReadonly();
+
   /**
    * Identifiant de la page actuellement affichée.
    */
@@ -35,6 +38,27 @@ export class DocumentService {
         storageService.write('document.json', JSON.stringify(documentState));
       }
     });
+  }
+
+  /**
+   * Nom affiché d'une page : le texte du lien qui y mène dans sa page parente (c'est là que
+   * l'utilisateur la nomme), à défaut son titre enregistré.
+   */
+  pageTitle(page: DocumentPage): string {
+    const parent = page.parentId ? this.getPagebyId(page.parentId) : undefined;
+    if (parent) {
+      const link = new RegExp(
+        `<a\\b[^>]*href="[^"]*/document/${page.id}"[^>]*>([\\s\\S]*?)</a>`,
+      ).exec(parent.content);
+      const text = link?.[1]
+        .replace(/<[^>]*>/g, '')
+        .replace(/^\s*📄\s*/, '')
+        .trim();
+      if (text) {
+        return text;
+      }
+    }
+    return page.title;
   }
 
   /**

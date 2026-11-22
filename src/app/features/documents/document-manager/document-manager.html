@@ -1,3 +1,16 @@
+@if (breadcrumb().length > 0) {
+  <nav class="breadcrumb" aria-label="Arborescence du document">
+    @for (crumb of breadcrumb(); track crumb.id; let last = $last) {
+      @if (last) {
+        <span class="current" aria-current="page">{{ crumb.title }}</span>
+      } @else {
+        <button type="button" (click)="openPage(crumb.id)">{{ crumb.title }}</button>
+        <span class="material-symbols-outlined sep">chevron_right</span>
+      }
+    }
+  </nav>
+}
+
 <h1>Espace de travail</h1>
 
 <app-editor [content]="content()" (contentChange)="onContentChange($event)"></app-editor>
