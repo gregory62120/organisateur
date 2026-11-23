@@ -27,6 +27,11 @@ export const routes: Routes = [
       },
 
       {
+        path: 'hours',
+        loadComponent: () => import('./features/hours/hours').then((c) => c.HoursComponent),
+      },
+
+      {
         path: 'gantt',
         loadComponent: () => import('./features/gantt/gantt').then((c) => c.GanttComponent),
       },
