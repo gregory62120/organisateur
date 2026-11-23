@@ -83,12 +83,15 @@
         </header>
 
         <ul>
-          @for (item of day.items; track item.task.id) {
+          @for (item of day.items; track item.task.id + '-' + item.part) {
             <li class="row">
               <button type="button" class="task" (click)="open(item.task)">
                 <span class="flag" [attr.data-priority]="item.task.priority"></span>
                 <span class="body">
-                  <span class="title">{{ item.task.title }}</span>
+                  <span class="title"
+                    >{{ item.task.title
+                    }}{{ item.part ? ' (' + item.part + '/' + item.parts + ')' : '' }}</span
+                  >
                   <span class="reasons">
                     @for (reason of item.reasons; track reason) {
                       <span class="chip">{{ reason }}</span>
@@ -96,7 +99,7 @@
                   </span>
                 </span>
                 <span class="hours">
-                  <b>{{ item.start }} – {{ item.end }}</b>
+                  <b>{{ slotLabel(item) }}</b>
                   <span>{{ item.hours }} h</span>
                 </span>
               </button>
@@ -105,11 +108,25 @@
                   type="button"
                   class="ignore"
                   title="Déplanifier cette tâche"
-                  (click)="unplan(item.task)"
+                  (click)="unplan(item.task, item.part)"
                 >
                   <span class="material-symbols-outlined">event_busy</span>
                 </button>
               }
+              <button
+                type="button"
+                class="ignore"
+                [title]="
+                  item.part
+                    ? 'Fusionner les parties de la tâche'
+                    : 'Scinder la tâche en deux parties'
+                "
+                (click)="toggleSplit(item.task, item.hours)"
+              >
+                <span class="material-symbols-outlined">{{
+                  item.part ? 'call_merge' : 'call_split'
+                }}</span>
+              </button>
               <button
                 type="button"
                 class="ignore"
@@ -145,7 +162,7 @@
     <details class="later">
       <summary>{{ plan().later.length }} tâche(s) pour plus tard</summary>
       <ul>
-        @for (item of plan().later; track item.task.id) {
+        @for (item of plan().later; track item.task.id + '-' + item.part) {
           <li class="row">
             <button type="button" class="task" (click)="open(item.task)">
               <span class="flag" [attr.data-priority]="item.task.priority"></span>
@@ -153,6 +170,18 @@
                 ><span class="title">{{ item.task.title }}</span></span
               >
               <span class="hours">{{ item.hours }} h</span>
+            </button>
+            <button
+              type="button"
+              class="ignore"
+              [title]="
+                item.part ? 'Fusionner les parties de la tâche' : 'Scinder la tâche en deux parties'
+              "
+              (click)="toggleSplit(item.task, item.hours)"
+            >
+              <span class="material-symbols-outlined">{{
+                item.part ? 'call_merge' : 'call_split'
+              }}</span>
             </button>
             <button
               type="button"

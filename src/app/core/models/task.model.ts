@@ -28,6 +28,15 @@ export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE';
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+/** Un créneau de travail d'une tâche scindée (une partie, un jour, des heures). */
+export interface WorkSlot {
+  /** Numéro de la partie scindée (à partir de 1) ; 0 pour une tâche non scindée coupée par une pause. */
+  part: number;
+  date: string;
+  start?: string;
+  end?: string;
+}
+
 export interface Task {
   id: string;
 
@@ -76,6 +85,15 @@ export interface Task {
   workStartTime?: string;
 
   workEndTime?: string;
+
+  /** Tâche scindée : durée en heures de chaque partie (ex. [2, 1.5]) ; la somme remplace l'estimation. */
+  split?: number[];
+
+  /** Créneaux planifiés des parties d'une tâche scindée. */
+  workSlots?: WorkSlot[];
+
+  /** Peut se faire pendant une réunion : le plan ne la décale pas autour des réunions. */
+  duringMeetings?: boolean;
 
   /** La tâche est écartée du plan suggéré (sans être archivée ni masquée). */
   planIgnored?: boolean;

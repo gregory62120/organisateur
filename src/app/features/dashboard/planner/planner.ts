@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { Task } from '../../../core/models/task.model';
+import { Task, WorkSlot } from '../../../core/models/task.model';
 import { PRIORITY_LABELS } from '../../../core/models/task-labels';
 import { buildPlan, PlanDay, PlanItem } from '../../../core/models/planner';
 import { uniqueAssignees } from '../../../core/models/task-state';
@@ -87,21 +87,105 @@ export class PlannerComponent {
 
   /** Inscrit la journée dans les tâches (« prise en charge » du jour) pour la retrouver dans leur fiche. */
   commit(day: PlanDay) {
-    for (const item of day.items) {
+    // Une tâche peut avoir plusieurs éléments dans la journée (parties d'une tâche scindée) : on les
+    // regroupe pour ne la mettre à jour qu'une fois.
+    const byTask = new Map<string, PlanItem[]>();
+    for (const item of day.items.filter((i) => !i.fixed)) {
+      byTask.set(item.task.id, [...(byTask.get(item.task.id) ?? []), item]);
+    }
+    for (const items of byTask.values()) {
+      const task = this.latest(items[0].task);
+      const asSlots = items.some(
+        (item) => item.part !== undefined || (item.segments?.length ?? 0) > 1,
+      );
+      if (!asSlots) {
+        const item = items[0];
+        this.taskService.update({
+          ...task,
+          workSlots: undefined,
+          workStart: day.date,
+          workEnd: day.date,
+          workStartTime: item.start,
+          workEndTime: item.end,
+        });
+        continue;
+      }
+      const replaced = new Set(items.map((item) => item.part ?? 0));
+      const slots: WorkSlot[] = (task.workSlots ?? []).filter((slot) => !replaced.has(slot.part));
+      for (const item of items) {
+        for (const segment of item.segments ?? []) {
+          slots.push({
+            part: item.part ?? 0,
+            date: day.date,
+            start: segment.start,
+            end: segment.end,
+          });
+        }
+      }
+      slots.sort(
+        (a, b) => a.date.localeCompare(b.date) || (a.start ?? '').localeCompare(b.start ?? ''),
+      );
       this.taskService.update({
-        ...item.task,
-        workStart: day.date,
-        workEnd: day.date,
-        workStartTime: item.start,
-        workEndTime: item.end,
+        ...task,
+        workSlots: slots,
+        workStart: undefined,
+        workEnd: undefined,
+        workStartTime: undefined,
+        workEndTime: undefined,
       });
     }
   }
 
-  /** Retire la prise en charge (dates et heures) d'une tâche. */
-  unplan(task: Task) {
+  /** Plages du créneau, lisibles : « 11:00 – 11:45 · 14:00 – 15:15 ». */
+  slotLabel(item: PlanItem): string {
+    return (item.segments ?? [{ start: item.start ?? '', end: item.end ?? '' }])
+      .map((segment) => `${segment.start} – ${segment.end}`)
+      .join(' · ');
+  }
+
+  /** Tâche à jour (un `PlanItem` peut garder une version périmée après une première mise à jour). */
+  private latest(task: Task): Task {
+    return this.taskService.tasksSignal().find((t) => t.id === task.id) ?? task;
+  }
+
+  /** Scinde la tâche en deux parties égales (ou fusionne si elle l'est déjà). */
+  toggleSplit(task: Task, hours: number) {
+    const current = this.latest(task);
+    if (current.split) {
+      this.taskService.update({
+        ...current,
+        split: undefined,
+        workSlots: undefined,
+        estimateHours: current.split.reduce((sum, part) => sum + part, 0),
+      });
+      return;
+    }
+    const total = current.estimateHours ?? hours;
+    const first = Math.max(0.5, Math.round(total / 2 / 0.5) * 0.5);
+    const second = Math.max(0.5, total - first);
     this.taskService.update({
-      ...task,
+      ...current,
+      split: [first, second],
+      workStart: undefined,
+      workEnd: undefined,
+      workStartTime: undefined,
+      workEndTime: undefined,
+    });
+  }
+
+  /** Retire la prise en charge (dates et heures) d'une tâche. */
+  unplan(task: Task, part?: number) {
+    const current = this.latest(task);
+    if (current.workSlots?.length && part !== undefined) {
+      this.taskService.update({
+        ...current,
+        workSlots: (current.workSlots ?? []).filter((slot) => slot.part !== part),
+      });
+      return;
+    }
+    this.taskService.update({
+      ...current,
+      workSlots: undefined,
       workStart: undefined,
       workEnd: undefined,
       workStartTime: undefined,
@@ -113,10 +197,23 @@ export class PlannerComponent {
   uncommit(day: PlanDay) {
     day.items
       .filter((item) => this.isItemCommitted(item, day))
-      .forEach((item) => this.unplan(item.task));
+      .forEach((item) => this.unplan(item.task, item.part));
   }
 
   isItemCommitted(item: PlanItem, day: PlanDay): boolean {
+    if (item.fixed) {
+      return true;
+    }
+    if (item.part !== undefined || (item.segments?.length ?? 0) > 1) {
+      const mine = (item.task.workSlots ?? []).filter(
+        (slot) => slot.part === (item.part ?? 0) && slot.date === day.date,
+      );
+      const wanted = item.segments ?? [];
+      return (
+        mine.length === wanted.length &&
+        wanted.every((segment, i) => mine[i].start === segment.start && mine[i].end === segment.end)
+      );
+    }
     return (
       item.task.workStart === day.date &&
       item.task.workEnd === day.date &&
@@ -134,16 +231,7 @@ export class PlannerComponent {
   }
 
   isCommitted(day: PlanDay): boolean {
-    return (
-      day.items.length > 0 &&
-      day.items.every(
-        (i) =>
-          i.task.workStart === day.date &&
-          i.task.workEnd === day.date &&
-          i.task.workStartTime === i.start &&
-          i.task.workEndTime === i.end,
-      )
-    );
+    return day.items.length > 0 && day.items.every((item) => this.isItemCommitted(item, day));
   }
 
   private todayKey() {

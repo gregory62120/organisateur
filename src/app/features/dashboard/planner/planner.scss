@@ -41,18 +41,38 @@ h2 {
 
 .controls {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   font-size: 13px;
+  font-weight: 600;
   color: var(--tf-muted);
 
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   select {
-    margin-left: 4px;
-    padding: 4px 8px;
+    height: 40px;
+    padding: 0 12px;
     border: 1px solid var(--tf-border);
-    border-radius: 6px;
+    border-radius: 10px;
     background: var(--tf-surface);
     color: var(--tf-text);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
   }
+}
+
+select:focus,
+input[type='time']:focus {
+  outline: none;
+  border-color: var(--tf-primary);
+  box-shadow: 0 0 0 3px var(--tf-primary-soft);
 }
 
 .insight {
@@ -266,10 +286,14 @@ ul {
 .hours-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
   border: 1px solid var(--tf-border);
-  border-radius: 6px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
   background: var(--tf-surface);
   color: var(--tf-text);
   cursor: pointer;
@@ -317,11 +341,14 @@ ul {
   }
 
   input[type='time'] {
-    padding: 3px 6px;
+    height: 36px;
+    padding: 0 10px;
     border: 1px solid var(--tf-border);
-    border-radius: 6px;
+    border-radius: 10px;
     background: var(--tf-surface);
     color: var(--tf-text);
+    font: inherit;
+    font-size: 14px;
   }
 }
 
