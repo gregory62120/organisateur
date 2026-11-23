@@ -152,7 +152,9 @@ export class CalendarService {
         const index = sameGroup.indexOf(slot) + 1;
         let suffix = '';
         if (slot.part > 0) {
-          suffix = ` (${slot.part}/${task.split?.length ?? slot.part})${index > 1 ? ' · suite' : ''}`;
+          const total =
+            task.split?.length ?? Math.max(...task.workSlots.map((other) => other.part));
+          suffix = ` (${slot.part}/${total})${index > 1 ? ' · suite' : ''}`;
         } else if (sameGroup.length > 1) {
           suffix = ` (${index}/${sameGroup.length})`;
         }

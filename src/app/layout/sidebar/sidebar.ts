@@ -45,6 +45,7 @@ export class Sidebar {
       { label: 'Kanban', icon: 'view_kanban', url: '/kanban' },
       { label: 'Calendrier', icon: 'calendar_month', url: '/calendar' },
       { label: 'Mes heures', icon: 'schedule', url: '/hours' },
+      { label: 'Temps passé', icon: 'hourglass_top', url: '/time' },
       { label: 'Gantt', icon: 'timeline', url: '/gantt' },
       ...reports,
       { label: 'Documents', icon: 'folder', url: '/documents' },

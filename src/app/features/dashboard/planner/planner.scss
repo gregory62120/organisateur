@@ -395,3 +395,158 @@ ul {
     font-size: 16px;
   }
 }
+
+.row {
+  flex-wrap: wrap;
+}
+
+.interrupt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex-basis: 100%;
+  padding: 10px 12px;
+  border: 1px dashed var(--tf-border);
+  border-radius: 10px;
+  background: var(--tf-bg);
+  font-size: 13px;
+  color: var(--tf-muted);
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  select,
+  input {
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--tf-border);
+    border-radius: 10px;
+    background: var(--tf-surface);
+    color: var(--tf-text);
+    font: inherit;
+    font-size: 14px;
+  }
+
+  input {
+    width: 72px;
+  }
+
+  small {
+    flex-basis: 100%;
+  }
+}
+
+.interrupt-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.link {
+  border: 0;
+  background: none;
+  color: var(--tf-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+// ---- Calendrier d'une journée
+.tl {
+  position: relative;
+  margin: 4px 0 8px 34px;
+  border-left: 1px solid var(--tf-border);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(34px - 1px),
+    var(--tf-border) calc(34px - 1px),
+    var(--tf-border) 34px
+  );
+  border-radius: 4px;
+}
+
+.tl-off {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(100, 116, 139, 0.12);
+  pointer-events: none;
+}
+
+.tl-hour {
+  position: absolute;
+  left: -34px;
+  width: 28px;
+  transform: translateY(-50%);
+  font-size: 10px;
+  text-align: right;
+  color: var(--tf-muted);
+}
+
+.tl-block {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 2px 6px;
+  border: 0;
+  border-left: 3px solid var(--tf-primary);
+  border-radius: 6px;
+  background: var(--tf-primary-soft);
+  color: var(--tf-text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.2;
+
+  small {
+    font-weight: 400;
+    color: var(--tf-muted);
+  }
+
+  &[data-priority='HIGH'] {
+    border-left-color: #e5484d;
+  }
+
+  &[data-priority='MEDIUM'] {
+    border-left-color: #ff9f1a;
+  }
+
+  &.fixed {
+    background: #ede9fe;
+  }
+
+  &.pause,
+  &.meeting {
+    cursor: default;
+    font-weight: 400;
+    color: var(--tf-muted);
+  }
+
+  &.pause {
+    border-left-color: transparent;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(100, 116, 139, 0.18) 0 6px,
+      transparent 6px 12px
+    );
+  }
+
+  &.meeting {
+    border-left-color: #6d4aff;
+    background: rgba(109, 74, 255, 0.12);
+  }
+}
+
+button.tl-block {
+  cursor: pointer;
+}

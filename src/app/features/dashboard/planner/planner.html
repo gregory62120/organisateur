@@ -21,6 +21,15 @@
       <button
         type="button"
         class="hours-toggle"
+        [class.on]="showCalendar()"
+        (click)="showCalendar.set(!showCalendar())"
+      >
+        <span class="material-symbols-outlined">calendar_view_day</span>
+        Calendrier
+      </button>
+      <button
+        type="button"
+        class="hours-toggle"
         [class.on]="scheduleOpen()"
         (click)="scheduleOpen.set(!scheduleOpen())"
       >
@@ -82,6 +91,45 @@
           }
         </header>
 
+        @if (showCalendar() && timelines().get(day.date); as tl) {
+          <div class="tl" [style.height.px]="tl.height">
+            @for (band of tl.off; track $index) {
+              <div class="tl-off" [style.top.%]="band.top" [style.height.%]="band.height"></div>
+            }
+            @for (hour of tl.hours; track hour.label) {
+              <span class="tl-hour" [style.top.%]="hour.top">{{ hour.label }}</span>
+            }
+            @for (block of tl.blocks; track $index) {
+              @if (block.task) {
+                <button
+                  type="button"
+                  class="tl-block"
+                  [class.fixed]="block.kind === 'fixed'"
+                  [attr.data-priority]="block.priority"
+                  [style.top.%]="block.top"
+                  [style.height.%]="block.height"
+                  [title]="block.label + ' · ' + block.range"
+                  (click)="open(block.task)"
+                >
+                  <span>{{ block.label }}</span>
+                  <small>{{ block.range }}</small>
+                </button>
+              } @else {
+                <div
+                  class="tl-block"
+                  [class.pause]="block.kind === 'break'"
+                  [class.meeting]="block.kind === 'meeting'"
+                  [style.top.%]="block.top"
+                  [style.height.%]="block.height"
+                  [title]="block.label + ' · ' + block.range"
+                >
+                  <span>{{ block.label }}</span>
+                </div>
+              }
+            }
+          </div>
+        }
+
         <ul>
           @for (item of day.items; track item.task.id + '-' + item.part) {
             <li class="row">
@@ -103,6 +151,25 @@
                   <span>{{ item.hours }} h</span>
                 </span>
               </button>
+              @if (item.task.interruption && item.part !== undefined) {
+                <button
+                  type="button"
+                  class="ignore"
+                  title="Annuler l'interruption de cette tâche"
+                  (click)="clearInterruption(item.task)"
+                >
+                  <span class="material-symbols-outlined">undo</span>
+                </button>
+              } @else if (!item.fixed && item.part === undefined) {
+                <button
+                  type="button"
+                  class="ignore"
+                  title="Interrompre cette tâche par une autre, puis la reprendre"
+                  (click)="startInterrupt(item)"
+                >
+                  <span class="material-symbols-outlined">pause_circle</span>
+                </button>
+              }
               @if (isItemCommitted(item, day)) {
                 <button
                   type="button"
@@ -135,6 +202,46 @@
               >
                 <span class="material-symbols-outlined">visibility_off</span>
               </button>
+              @if (interrupting() === item.task.id) {
+                <div class="interrupt">
+                  <label>
+                    Interrompue par
+                    <select
+                      [value]="interruptBy()"
+                      (change)="interruptBy.set($any($event.target).value)"
+                    >
+                      <option value="">Choisir une tâche…</option>
+                      @for (other of interrupters(item.task); track other.id) {
+                        <option [value]="other.id" [selected]="other.id === interruptBy()">
+                          {{ other.title }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    Après
+                    <input
+                      type="number"
+                      min="0"
+                      step="15"
+                      [value]="interruptAfter()"
+                      (input)="interruptAfter.set($any($event.target).value)"
+                    />
+                    min de travail
+                  </label>
+                  <span class="interrupt-actions">
+                    <button type="button" class="commit" (click)="confirmInterrupt(item.task)">
+                      Interrompre
+                    </button>
+                    <button type="button" class="link" (click)="interrupting.set(null)">
+                      Annuler
+                    </button>
+                  </span>
+                  <small
+                    >La tâche choisie est placée juste après ce début, puis celle-ci reprend.</small
+                  >
+                </div>
+              }
             </li>
           } @empty {
             <li class="empty">Rien de prévu.</li>

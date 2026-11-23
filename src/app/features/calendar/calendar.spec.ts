@@ -51,6 +51,8 @@ describe('CalendarComponent', () => {
 
   let calendar: CalendarComponent;
 
+  let initialView: string;
+
   function setup() {
     TestBed.configureTestingModule({
       providers: [
@@ -104,6 +106,9 @@ describe('CalendarComponent', () => {
     ]);
 
     calendar = setup().componentInstance;
+    initialView = calendar.view();
+    // La page s'ouvre sur la vue Jour ; ces tests portent sur la vue Mois.
+    calendar.setView('month');
   });
 
   afterEach(() => vi.useRealTimers());
@@ -115,7 +120,12 @@ describe('CalendarComponent', () => {
       .find((d) => d.iso === iso)!
       .events.map((e) => e.key);
 
-  it('démarre sur le mois courant avec aujourd’hui sélectionné', () => {
+  it('s’ouvre sur la vue Jour, aujourd’hui sélectionné', () => {
+    expect(initialView).toBe('day');
+    expect(calendar.selected()).toBe('2026-10-15');
+  });
+
+  it('la vue Mois affiche le mois courant', () => {
     expect(calendar.view()).toBe('month');
     expect(calendar.title()).toBe('octobre 2026');
     expect(calendar.selected()).toBe('2026-10-15');
@@ -249,6 +259,7 @@ describe('CalendarComponent', () => {
       ]);
       TestBed.resetTestingModule();
       const fixture = setup();
+      fixture.componentInstance.setView('month');
       await fixture.whenStable();
       const el = fixture.nativeElement as HTMLElement;
 
@@ -324,6 +335,7 @@ describe('CalendarComponent', () => {
     it('affiche l’heure et la couleur de la puce, et crée via le bouton « + » du jour', async () => {
       TestBed.resetTestingModule();
       const fixture = setup();
+      fixture.componentInstance.setView('month');
       await fixture.whenStable();
       const el = fixture.nativeElement as HTMLElement;
 
