@@ -9,7 +9,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 236px;
+  // La largeur de la vidéo est réglable (poignée en haut à gauche) ; 16 px = marges intérieures.
+  --video-w: 220px;
+  width: calc(var(--video-w) + 16px);
   padding: 8px;
   border: 1px solid var(--tf-border);
   border-radius: 16px;
@@ -29,10 +31,44 @@
   }
 
   // Pendant le déplacement : pas d'animation, et le lecteur passe au premier plan.
+  &.resizing {
+    transition: none;
+    user-select: none;
+  }
+
   &.dragging {
     box-shadow: 0 22px 50px rgba(15, 31, 61, 0.38);
     transition: none;
     user-select: none;
+  }
+}
+
+.resize {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--tf-border);
+  border-radius: 50%;
+  background: var(--tf-surface);
+  color: var(--tf-muted);
+  box-shadow: 0 2px 6px rgba(15, 31, 61, 0.2);
+  cursor: nwse-resize;
+  touch-action: none;
+
+  .material-symbols-outlined {
+    font-size: 14px;
+    transform: scaleX(-1);
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--tf-violet);
   }
 }
 
@@ -69,8 +105,8 @@
 }
 
 .video {
-  width: 220px;
-  height: 124px;
+  width: var(--video-w);
+  height: calc(var(--video-w) * 9 / 16);
   overflow: hidden;
   border-radius: 10px;
   background: #0b1f4b;

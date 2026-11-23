@@ -19,6 +19,16 @@ const KEY_STEP = 16;
 
 const STORAGE_KEY = 'tf-music-mini-position';
 
+const SIZE_KEY = 'tf-music-mini-size';
+
+/** Largeur (px) de la vidéo : par défaut, minimale et maximale. */
+const DEFAULT_VIDEO_WIDTH = 220;
+const MIN_VIDEO_WIDTH = 180;
+const MAX_VIDEO_WIDTH = 720;
+
+/** Pas (px) d'un redimensionnement au clavier. */
+const SIZE_STEP = 20;
+
 interface Offset {
   right: number;
   bottom: number;
@@ -37,10 +47,27 @@ interface Offset {
       #mini
       [class.visible]="player.isActive()"
       [class.dragging]="dragging()"
+      [class.resizing]="resizing()"
       [style.right.px]="offset().right"
       [style.bottom.px]="offset().bottom"
+      [style.--video-w.px]="videoWidth()"
       aria-label="Lecteur de musique"
     >
+      <button
+        type="button"
+        class="resize"
+        title="Redimensionner la vidéo (double-clic : taille d'origine)"
+        aria-label="Redimensionner le lecteur"
+        (pointerdown)="startResize($event)"
+        (pointermove)="moveResize($event)"
+        (pointerup)="endResize()"
+        (pointercancel)="endResize()"
+        (dblclick)="resetSize()"
+        (keydown)="onResizeKey($event)"
+      >
+        <span class="material-symbols-outlined">open_in_full</span>
+      </button>
+
       <button
         type="button"
         class="grip"
@@ -122,6 +149,13 @@ export class MusicMiniPlayerComponent implements AfterViewInit {
 
   readonly dragging = signal(false);
 
+  /** Largeur de la vidéo, en px (la hauteur suit en 16/9). */
+  readonly videoWidth = signal(this.restoreSize());
+
+  readonly resizing = signal(false);
+
+  private resize?: { x: number; y: number; start: number };
+
   private drag?: { x: number; y: number; start: Offset };
 
   ngAfterViewInit() {
@@ -172,6 +206,83 @@ export class MusicMiniPlayerComponent implements AfterViewInit {
       });
       this.save();
     }
+  }
+
+  startResize(event: PointerEvent) {
+    if (event.button) {
+      return;
+    }
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+    this.resize = { x: event.clientX, y: event.clientY, start: this.videoWidth() };
+    this.resizing.set(true);
+  }
+
+  /** La poignée est en haut à gauche : tirer vers la gauche ou vers le haut agrandit. */
+  moveResize(event: PointerEvent) {
+    if (!this.resize) {
+      return;
+    }
+    const byX = this.resize.x - event.clientX;
+    const byY = ((this.resize.y - event.clientY) * 16) / 9;
+    this.setWidth(this.resize.start + (Math.abs(byX) >= Math.abs(byY) ? byX : byY));
+  }
+
+  endResize() {
+    if (this.resize) {
+      this.resize = undefined;
+      this.resizing.set(false);
+      this.saveSize();
+    }
+  }
+
+  /** Flèches sur la poignée : + / − par pas de 20 px (haut, gauche = plus grand). */
+  onResizeKey(event: KeyboardEvent) {
+    const delta: Record<string, number> = {
+      ArrowUp: SIZE_STEP,
+      ArrowLeft: SIZE_STEP,
+      '+': SIZE_STEP,
+      ArrowDown: -SIZE_STEP,
+      ArrowRight: -SIZE_STEP,
+      '-': -SIZE_STEP,
+    };
+    if (event.key in delta) {
+      event.preventDefault();
+      this.setWidth(this.videoWidth() + delta[event.key]);
+      this.saveSize();
+    }
+  }
+
+  resetSize() {
+    this.setWidth(DEFAULT_VIDEO_WIDTH);
+    this.saveSize();
+  }
+
+  /** Borne la largeur (la vidéo doit tenir dans la fenêtre) puis garde le lecteur visible. */
+  private setWidth(width: number) {
+    const max = Math.max(MIN_VIDEO_WIDTH, Math.min(MAX_VIDEO_WIDTH, window.innerWidth - 40));
+    this.videoWidth.set(Math.round(Math.min(Math.max(width, MIN_VIDEO_WIDTH), max)));
+    queueMicrotask(() => this.place(this.offset()));
+  }
+
+  private saveSize() {
+    try {
+      localStorage.setItem(SIZE_KEY, String(this.videoWidth()));
+    } catch {
+      // Stockage indisponible : la taille ne sera pas conservée.
+    }
+  }
+
+  private restoreSize(): number {
+    try {
+      const saved = Number(localStorage.getItem(SIZE_KEY));
+      if (Number.isFinite(saved) && saved >= MIN_VIDEO_WIDTH) {
+        return Math.min(saved, MAX_VIDEO_WIDTH);
+      }
+    } catch {
+      // Valeur illisible ou stockage indisponible : taille par défaut.
+    }
+    return DEFAULT_VIDEO_WIDTH;
   }
 
   /** Remet le lecteur dans le coin en bas à droite. */
