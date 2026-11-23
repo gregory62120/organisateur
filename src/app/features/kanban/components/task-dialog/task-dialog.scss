@@ -69,6 +69,8 @@ label,
 
 input[type='text'],
 input[type='date'],
+input[type='number'],
+input[type='time'],
 select {
   height: 40px;
   padding: 0 12px;
@@ -84,6 +86,43 @@ select {
     outline: none;
     border-color: var(--tf-primary);
     box-shadow: 0 0 0 3px var(--tf-primary-soft);
+  }
+}
+
+.fields .check {
+  flex-direction: row;
+  align-items: center;
+  grid-column: 1 / -1;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--tf-primary);
+  }
+}
+
+.fields > .unplan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--tf-bg);
+  color: var(--tf-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  .material-symbols-outlined {
+    font-size: 18px;
   }
 }
 

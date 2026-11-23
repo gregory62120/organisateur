@@ -138,8 +138,45 @@ export class CalendarService {
       }
     }
 
+    // Créneaux enregistrés par partie ou par morceau (tâche scindée, ou coupée par une pause).
     for (const task of tasks) {
-      if (taskGroup(task) === 'archived' || !task.workStart) {
+      if (taskGroup(task) === 'archived' || !task.workSlots?.length) {
+        continue;
+      }
+      for (const slot of task.workSlots) {
+        const date = this.gantt.parseDay(slot.date);
+        if (!date) {
+          continue;
+        }
+        const sameGroup = task.workSlots.filter((other) => other.part === slot.part);
+        const index = sameGroup.indexOf(slot) + 1;
+        let suffix = '';
+        if (slot.part > 0) {
+          suffix = ` (${slot.part}/${task.split?.length ?? slot.part})${index > 1 ? ' · suite' : ''}`;
+        } else if (sameGroup.length > 1) {
+          suffix = ` (${index}/${sameGroup.length})`;
+        }
+        const span = { startTime: slot.start, endTime: slot.end };
+        events.push({
+          key: `work:${task.id}:${slot.part}:${index}`,
+          kind: 'work',
+          title: task.title + suffix,
+          date: this.gantt.toIso(date),
+          done: task.status === 'DONE',
+          overdue: false,
+          assignee: task.assignedTo,
+          task,
+          priority: task.priority,
+          status: task.status,
+          color: 'violet',
+          ...span,
+          time: this.timeLabel(span),
+        });
+      }
+    }
+
+    for (const task of tasks) {
+      if (taskGroup(task) === 'archived' || !task.workStart || task.workSlots?.length) {
         continue;
       }
       const from = this.gantt.parseDay(task.workStart);

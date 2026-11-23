@@ -65,6 +65,16 @@ export class TaskDialogComponent {
 
   readonly workEndTime = signal(this.initial.workEndTime ?? '');
 
+  readonly duringMeetings = signal(this.initial.duringMeetings === true);
+
+  readonly splitOn = signal((this.initial.split?.length ?? 0) > 1);
+
+  readonly part1 = signal(this.initial.split ? String(this.initial.split[0]) : '');
+
+  readonly part2 = signal(this.initial.split ? String(this.initial.split[1]) : '');
+
+  private workSlots = this.initial.workSlots;
+
   readonly planIgnored = signal(this.initial.planIgnored === true);
 
   readonly assignedTo = signal(this.initial.assignedTo ?? '');
@@ -128,8 +138,40 @@ export class TaskDialogComponent {
     this.checklist.update((items) => items.filter((i) => i.id !== id));
   }
 
+  /** Parties d'une tâche scindée (l'estimation devient leur somme), ou rien si elle ne l'est pas. */
+  private splitFields(): Partial<Task> {
+    const parts = [this.part1(), this.part2()].map((p) => Number(p.replace(',', '.')));
+    if (!this.splitOn() || parts.some((p) => !(p > 0))) {
+      // Les créneaux d'une tâche non scindée (coupée par une pause) sont conservés.
+      return { split: undefined, workSlots: this.initial.split ? undefined : this.workSlots };
+    }
+    const keep = this.initial.split?.join() === parts.join();
+    return {
+      split: parts,
+      estimateHours: parts[0] + parts[1],
+      workSlots: keep ? this.workSlots : undefined,
+      // Une tâche scindée se planifie par parties, pas d'un bloc.
+      workStart: undefined,
+      workEnd: undefined,
+      workStartTime: undefined,
+      workEndTime: undefined,
+    };
+  }
+
   /** Retire la prise en charge : la tâche disparaît du calendrier et du plan planifié. */
+  /** Active ou désactive la scission ; par défaut l'estimation est coupée en deux moitiés. */
+  toggleSplit(on: boolean) {
+    this.splitOn.set(on);
+    if (on && !this.part1()) {
+      const total = Number(this.estimateHours().replace(',', '.')) || 2;
+      const first = Math.max(0.5, Math.round(total / 2 / 0.5) * 0.5);
+      this.part1.set(String(first));
+      this.part2.set(String(Math.max(0.5, total - first)));
+    }
+  }
+
   unplan() {
+    this.workSlots = undefined;
     this.workStart.set('');
     this.workEnd.set('');
     this.workStartTime.set('');
@@ -156,6 +198,8 @@ export class TaskDialogComponent {
       workStartTime: this.workStartTime() || undefined,
       workEndTime: this.workEndTime() || undefined,
       planIgnored: this.planIgnored() || undefined,
+      duringMeetings: this.duringMeetings() || undefined,
+      ...this.splitFields(),
       assignedTo: this.assignedTo().trim() || undefined,
       tags: this.tags(),
       checklist: this.checklist().filter((i) => i.label.trim()),
