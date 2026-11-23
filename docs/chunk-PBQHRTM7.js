@@ -1,0 +1,1 @@
+var n={start:"09:00",end:"18:00",breaks:[{start:"12:00",end:"13:00"}]},s=t=>{let[r,e]=t.split(":").map(Number);return(r||0)*60+(e||0)},a=t=>`${String(Math.floor(t/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`;export{n as a,s as b,a as c};
