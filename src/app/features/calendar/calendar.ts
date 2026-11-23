@@ -21,6 +21,8 @@ import {
   STATUSES,
 } from '../../core/models/task-labels';
 import { uniqueAssignees } from '../../core/models/task-state';
+import { toMinutes } from '../../core/models/schedule';
+import { ScheduleService } from '../../core/services/schedule.service';
 import { EventService } from '../../core/services/event.service';
 import { MusicPlayerService } from '../../core/services/music-player.service';
 import { MusicPanelComponent } from '../../shared/music/music-panel/music-panel';
@@ -50,8 +52,16 @@ const FIRST_VISIBLE_HOUR = 7;
 /** Pas (minutes) du créneau choisi par un double-clic dans la grille. */
 const SLOT_STEP = 30;
 
+export interface DayBand {
+  top: number;
+  height: number;
+  kind: 'off' | 'break';
+}
+
 export interface WeekColumn {
   day: CalendarDay;
+  /** Heures hors travail et pauses (en % de la journée), d'après « Mes horaires ». */
+  bands: DayBand[];
   /** Tâches et évènements sans heure : valables toute la journée. */
   allDay: CalendarEvent[];
   timed: TimedSlot[];
@@ -79,6 +89,8 @@ export class CalendarComponent {
 
   private musicPlayer = inject(MusicPlayerService);
 
+  private schedule = inject(ScheduleService);
+
   storage = inject(StorageService);
 
   readonly weekdays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -95,7 +107,8 @@ export class CalendarComponent {
 
   readonly formatDate = formatDueDate;
 
-  readonly view = signal<CalendarView>('month');
+  /** La page s'ouvre sur la vue Jour (la plus utile pour la journée en cours). */
+  readonly view = signal<CalendarView>('day');
 
   /** Un jour du mois ou de la semaine affichés. */
   readonly cursor = signal(this.startOfToday());
@@ -148,10 +161,30 @@ export class CalendarComponent {
       ? []
       : this.weeks()[0].map((day) => ({
           day,
+          bands: this.bandsFor(day.iso),
           allDay: day.events.filter((e) => !this.calendar.isTimed(e)),
           timed: this.calendar.layoutTimed(day.events.filter((e) => this.calendar.isTimed(e))),
         })),
   );
+
+  /** Plages non travaillées d'une journée : hors horaires et pauses, pour les griser dans la grille. */
+  private bandsFor(date: string): DayBand[] {
+    const schedule = this.schedule.forDay(date);
+    const pct = (minutes: number) => (minutes / (24 * 60)) * 100;
+    const bands: DayBand[] = [];
+    if (schedule.off) {
+      return [{ kind: 'off', top: 0, height: 100 }];
+    }
+    const open = toMinutes(schedule.start);
+    const close = toMinutes(schedule.end);
+    bands.push({ kind: 'off', top: 0, height: pct(open) });
+    bands.push({ kind: 'off', top: pct(close), height: 100 - pct(close) });
+    for (const pause of schedule.breaks) {
+      const from = toMinutes(pause.start);
+      bands.push({ kind: 'break', top: pct(from), height: pct(toMinutes(pause.end) - from) });
+    }
+    return bands.filter((band) => band.height > 0);
+  }
 
   private readonly now = signal(new Date());
 

@@ -1,5 +1,5 @@
 import { Task } from './task.model';
-import { buildPlan, workingDays } from './planner';
+import { bestSubset, buildPlan, workingDays } from './planner';
 
 const make = (overrides: Partial<Task>): Task => ({
   id: crypto.randomUUID(),
@@ -64,12 +64,14 @@ describe('planner', () => {
     expect(plan.days[0].items.map((i) => i.task.title)).toEqual(['à moi']);
   });
 
-  it('apprend la capacité de l’historique', () => {
-    const done = Array.from({ length: 10 }, () =>
-      make({ status: 'DONE', estimateHours: 4, completedAt: '2026-11-18T10:00:00.000Z' }),
-    );
-    const plan = buildPlan(done, { today: monday, days: 1 });
-    expect(plan.capacitySource).toBe('history');
+  it('utilise tout le temps libre de la journée, sans capacité apprise qui la bride', () => {
+    // 8 h libres (9 h – 18 h moins le déjeuner) : sept tâches d'une heure tiennent le jour même.
+    const tasks = Array.from({ length: 7 }, (_, i) => make({ title: `t${i}`, estimateHours: 1 }));
+    const plan = buildPlan(tasks, { today: new Date('2026-11-23T06:00:00'), days: 2 });
+    expect(plan.capacitySource).toBe('schedule');
+    expect(plan.days[0].capacity).toBe(8);
+    expect(plan.days[0].items.length).toBe(7);
+    expect(plan.days[1].items.length).toBe(0);
   });
 
   it('donne des horaires, hors pause déjeuner', () => {
@@ -284,5 +286,187 @@ describe('planner', () => {
       busy: { '2026-11-23': [{ start: 9 * 60, end: 11 * 60 }] },
     });
     expect(plan.days[0].items[0].start).toBe('10:00');
+  });
+
+  it('remplit mieux la journée : deux tâches de 3 h plutôt qu’une de 4 h qui laisse un trou', () => {
+    // Capacité 6 h : A (4 h) ne laisse que 2 h de libre, alors que B + C = 6 h pile.
+    const plan = buildPlan(
+      [
+        make({ title: 'A', estimateHours: 4 }),
+        make({ title: 'B', estimateHours: 3 }),
+        make({ title: 'C', estimateHours: 3 }),
+      ],
+      { today: new Date('2026-11-23T06:00:00'), days: 2, capacityHours: 6 },
+    );
+    expect(plan.days[0].items.map((i) => i.task.title).sort()).toEqual(['B', 'C']);
+    expect(plan.days[0].hours).toBe(6);
+    expect(plan.days[1].items.map((i) => i.task.title)).toEqual(['A']);
+  });
+
+  it('tient d’abord les échéances de la période, même face à une tâche plus prioritaire', () => {
+    const plan = buildPlan(
+      [
+        make({ title: 'sans échéance', priority: 'HIGH', estimateHours: 4 }),
+        make({
+          title: 'échéance demain',
+          priority: 'LOW',
+          estimateHours: 4,
+          dueDate: '2026-11-24',
+        }),
+        make({ title: 'échéance auj.', priority: 'LOW', estimateHours: 4, dueDate: '2026-11-23' }),
+      ],
+      { today: new Date('2026-11-23T06:00:00'), days: 2, capacityHours: 4 },
+    );
+    expect(plan.days[0].items.map((i) => i.task.title)).toEqual(['échéance auj.']);
+    expect(plan.days[1].items.map((i) => i.task.title)).toEqual(['échéance demain']);
+    expect(plan.later.map((i) => i.task.title)).toEqual(['sans échéance']);
+  });
+
+  it('place une tâche plus longue que la capacité sur une journée vide', () => {
+    const plan = buildPlan([make({ estimateHours: 9 })], {
+      today: new Date('2026-11-23T06:00:00'),
+      days: 1,
+      capacityHours: 6,
+    });
+    expect(plan.days[0].items.length).toBe(1);
+  });
+
+  it('sac à dos : meilleure valeur sous la capacité', () => {
+    const picked = bestSubset(
+      [
+        { weight: 4, value: 10 },
+        { weight: 3, value: 7 },
+        { weight: 3, value: 7 },
+      ],
+      6,
+    );
+    expect(picked).toEqual([1, 2]);
+    expect(bestSubset([{ weight: 5, value: 1 }], 3)).toEqual([]);
+  });
+
+  it('interruption voulue : début de A, B, puis reprise de A', () => {
+    const b = make({ title: 'B', estimateHours: 1 });
+    const a = make({
+      title: 'A',
+      estimateHours: 3,
+      priority: 'HIGH',
+      interruption: { by: b.id, afterMinutes: 60 },
+    });
+    const plan = buildPlan([a, b], {
+      today: new Date('2026-11-23T06:00:00'),
+      days: 1,
+      capacityHours: 8,
+    });
+    const rows = plan.days[0].items.map((i) => [i.task.title, i.part ?? 0, i.start, i.end]);
+    // La reprise de A (2 h restantes) s'étale de 11 h à 14 h autour de la pause du déjeuner.
+    expect(rows).toEqual([
+      ['A', 1, '09:00', '10:00'],
+      ['B', 0, '10:00', '11:00'],
+      ['A', 2, '11:00', '14:00'],
+    ]);
+    const resume = plan.days[0].items.filter((i) => i.task.title === 'A' && i.part === 2)[0];
+    expect(resume.segments).toEqual([
+      { start: '11:00', end: '12:00' },
+      { start: '13:00', end: '14:00' },
+    ]);
+    expect(resume.reasons[0]).toContain('Reprise après');
+  });
+
+  it('interruption sans début : B passe d’abord puis A', () => {
+    const b = make({ title: 'B', estimateHours: 1 });
+    const a = make({
+      title: 'A',
+      estimateHours: 2,
+      priority: 'HIGH',
+      interruption: { by: b.id, afterMinutes: 0 },
+    });
+    const plan = buildPlan([a, b], {
+      today: new Date('2026-11-23T06:00:00'),
+      days: 1,
+      capacityHours: 8,
+    });
+    expect(plan.days[0].items.map((i) => [i.task.title, i.start])).toEqual([
+      ['B', '09:00'],
+      ['A', '10:00'],
+    ]);
+  });
+
+  it('une tâche se coupe autour d’une tâche déjà fixée et reprend après', () => {
+    const plan = buildPlan(
+      [
+        make({
+          title: 'fixe',
+          estimateHours: 1,
+          workStart: '2026-11-23',
+          workEnd: '2026-11-23',
+          workStartTime: '10:00',
+          workEndTime: '11:00',
+        }),
+        make({ title: 'longue', estimateHours: 3, priority: 'HIGH' }),
+      ],
+      { today: new Date('2026-11-23T06:00:00'), days: 1, capacityHours: 8 },
+    );
+    const longue = plan.days[0].items.find((i) => i.task.title === 'longue');
+    expect(longue?.segments).toEqual([
+      { start: '09:00', end: '10:00' },
+      { start: '11:00', end: '12:00' },
+      { start: '13:00', end: '14:00' },
+    ]);
+  });
+
+  it('ne replanifie que le temps restant d’une tâche déjà commencée', () => {
+    const task = make({ estimateHours: 3 });
+    const plan = buildPlan([task], {
+      today: new Date('2026-11-23T06:00:00'),
+      days: 1,
+      capacityHours: 8,
+      spent: { [task.id]: 90 },
+    });
+    expect(plan.days[0].items[0].hours).toBe(1.5);
+    expect(plan.days[0].items[0].reasons.join(' ')).toContain('Reprise');
+  });
+
+  it('commence à l’heure de début saisie (8 h) et s’arrête à la fin (11 h 45)', () => {
+    const plan = buildPlan(
+      [make({ title: 'a', estimateHours: 2 }), make({ title: 'b', estimateHours: 3 })],
+      {
+        today: new Date('2026-11-23T06:00:00'),
+        days: 1,
+        schedule: () => ({ start: '08:00', end: '11:45', breaks: [] }),
+      },
+    );
+    const items = plan.days[0].items;
+    expect(items[0].start).toBe('08:00');
+    // 3 h 45 libres : 2 h + 3 h ne tiennent pas ensemble, la seconde tâche passe au lendemain.
+    expect(plan.days[0].capacity).toBe(3.75);
+    expect(items.length).toBe(1);
+    expect(plan.later.length).toBe(1);
+  });
+
+  it('replanifie un créneau déjà planifié devenu hors des horaires saisis', () => {
+    const plan = buildPlan(
+      [
+        make({
+          estimateHours: 1,
+          workStart: '2026-11-23',
+          workEnd: '2026-11-23',
+          workStartTime: '09:00',
+          workEndTime: '10:00',
+        }),
+      ],
+      {
+        today: new Date('2026-11-23T06:00:00'),
+        days: 1,
+        // Le créneau planifié à 9 h tombe maintenant dans une pause : il est replacé.
+        schedule: () => ({
+          start: '08:00',
+          end: '11:45',
+          breaks: [{ start: '08:30', end: '10:30' }],
+        }),
+      },
+    );
+    const item = plan.days[0].items[0];
+    expect(item.fixed).toBeUndefined();
+    expect(item.start).toBe('08:00');
   });
 });

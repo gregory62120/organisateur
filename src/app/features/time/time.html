@@ -1,0 +1,338 @@
+<header class="page-head">
+  <div>
+    <h1>Temps passé</h1>
+    <p class="subtitle">Lancez un chrono sur vos tâches, puis analysez où part votre temps.</p>
+  </div>
+</header>
+
+@if (!storage.isOpen()) {
+  <section class="empty-state">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h2>Aucun projet ouvert</h2>
+    <p>
+      Ouvrez un dossier : le temps passé est enregistré dans le fichier <code>timelog.json</code>.
+    </p>
+    <button type="button" class="btn-primary" (click)="openProject()">
+      <span class="material-symbols-outlined">create_new_folder</span>
+      Ouvrir un projet
+    </button>
+  </section>
+} @else {
+  <div class="seg tabs" role="tablist">
+    <button type="button" role="tab" [class.on]="tab() === 'track'" (click)="tab.set('track')">
+      <span class="material-symbols-outlined">timer</span> Suivi
+    </button>
+    <button type="button" role="tab" [class.on]="tab() === 'report'" (click)="tab.set('report')">
+      <span class="material-symbols-outlined">bar_chart</span> Rapport
+    </button>
+  </div>
+
+  @if (timeLog.timer(); as timer) {
+    <div class="running">
+      <span class="material-symbols-outlined pulse">radio_button_checked</span>
+      <span class="running-title">{{ runningTitle() }}</span>
+      <strong class="elapsed">{{ elapsed() }}</strong>
+      <button type="button" class="btn-stop" (click)="timeLog.stop()">
+        <span class="material-symbols-outlined">stop</span> Arrêter
+      </button>
+      <button type="button" class="link" (click)="timeLog.cancel()">Annuler</button>
+    </div>
+  }
+
+  @if (tab() === 'track') {
+    <section class="card week">
+      <header class="week-head">
+        <div class="nav">
+          <button type="button" class="icon" aria-label="Semaine précédente" (click)="shift(-1)">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <h2>{{ weekTitle() }}</h2>
+          <button type="button" class="icon" aria-label="Semaine suivante" (click)="shift(1)">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+          <button type="button" class="link" (click)="goToday()" [disabled]="isCurrentWeek()">
+            Aujourd'hui
+          </button>
+        </div>
+        <div class="week-tools">
+          <strong class="week-total">{{ format(weekTotal()) }} cette semaine</strong>
+          <label>
+            Pour
+            <select [value]="assignee()" (change)="setAssignee($any($event.target).value)">
+              <option value="">Tout le monde</option>
+              @for (name of assignees(); track name) {
+                <option [value]="name" [selected]="name === assignee()">{{ name }}</option>
+              }
+            </select>
+          </label>
+        </div>
+      </header>
+
+      <div class="grid">
+        @for (day of columns(); track day.date) {
+          <div
+            class="col"
+            [class.today]="day.isToday"
+            [class.selected]="day.date === selected()"
+            (click)="selected.set(day.date)"
+          >
+            <header class="col-head">
+              <span class="dow">{{ day.label }}</span>
+              <span class="num">{{ day.number }}</span>
+              <span class="sum">{{ dayTotal(day) > 0 ? format(dayTotal(day)) : '' }}</span>
+            </header>
+
+            @for (card of day.cards; track card.task.id) {
+              <article
+                class="task"
+                [class.running]="isRunning(card.task)"
+                [class.done]="card.task.status === 'DONE'"
+                (click)="$event.stopPropagation()"
+              >
+                <button type="button" class="task-title" (click)="open(card.task)">
+                  {{ card.task.title }}
+                </button>
+                <div class="chips">
+                  @if (card.planned) {
+                    <span class="chip plan" title="Prévu au calendrier">
+                      <span class="material-symbols-outlined">work_history</span>{{ card.planned }}
+                    </span>
+                  }
+                  @if (card.due) {
+                    <span class="chip due">Échéance</span>
+                  }
+                  @if (card.estimate) {
+                    <span class="chip" [class.over]="card.spentAll > card.estimate">
+                      {{ format(card.spentAll) }} / {{ formatEstimate(card.estimate) }}
+                    </span>
+                  }
+                </div>
+                <div class="task-foot">
+                  <span class="logged" [class.live]="isRunning(card.task) && day.isToday">
+                    {{ shown(card, day.date) > 0 ? format(shown(card, day.date)) : '—' }}
+                  </span>
+                  @if (day.isToday) {
+                    @if (isRunning(card.task)) {
+                      <button
+                        type="button"
+                        class="play stop"
+                        title="Arrêter et enregistrer"
+                        (click)="timeLog.stop()"
+                      >
+                        <span class="material-symbols-outlined">pause</span>
+                        Arrêter
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="play"
+                        [title]="card.logged > 0 ? 'Reprendre le chrono' : 'Lancer le chrono'"
+                        (click)="timeLog.start(card.task.id)"
+                      >
+                        <span class="material-symbols-outlined">play_arrow</span>
+                        {{ card.logged > 0 ? 'Reprendre' : 'Lancer' }}
+                      </button>
+                    }
+                  }
+                </div>
+              </article>
+            } @empty {
+              <p class="none">Rien de prévu</p>
+            }
+          </div>
+        }
+      </div>
+      <p class="hint">
+        Le chrono se lance depuis la colonne d'aujourd'hui. « Arrêter » enregistre le temps écoulé,
+        « Reprendre » relance un nouveau chrono sur la même tâche : les temps s'additionnent. Pour
+        un autre jour, ajoutez du temps à la main ci-dessous.
+      </p>
+    </section>
+
+    <section class="card day">
+      <header>
+        <h2>{{ selectedLabel() }}</h2>
+        <strong>{{ format(selectedTotal()) }}</strong>
+      </header>
+
+      <div class="day-layout">
+        <ul class="entries">
+          @for (item of dayEntries(); track item.log.id) {
+            <li>
+              <span class="when">
+                {{ item.log.start ? item.log.start + ' – ' + item.log.end : 'Saisie manuelle' }}
+              </span>
+              <span class="title">
+                {{ item.title }}
+                @if (item.log.note) {
+                  <small>{{ item.log.note }}</small>
+                }
+              </span>
+              <strong>{{ format(minutesOf(item.log)) }}</strong>
+              <button
+                type="button"
+                class="del"
+                title="Supprimer cette saisie"
+                (click)="timeLog.remove(item.log.id)"
+              >
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">Aucun temps enregistré ce jour-là.</li>
+          }
+        </ul>
+
+        <div class="form">
+          <h3>Ajouter du temps à ce jour</h3>
+          <label>
+            <span>Tâche</span>
+            <select [value]="formTask()" (change)="formTask.set($any($event.target).value)">
+              <option value="" [selected]="!formTask()">Choisir…</option>
+              @for (task of tasks(); track task.id) {
+                <option [value]="task.id" [selected]="task.id === formTask()">
+                  {{ task.title }} ({{ statusLabels[task.status] }})
+                </option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Durée</span>
+            <input
+              type="text"
+              placeholder="1h30, 45min, 1,5"
+              [value]="formDuration()"
+              (input)="formDuration.set($any($event.target).value)"
+              (keydown.enter)="add()"
+            />
+          </label>
+          <label>
+            <span>Note (facultatif)</span>
+            <input
+              type="text"
+              [value]="formNote()"
+              (input)="formNote.set($any($event.target).value)"
+            />
+          </label>
+          @if (formError()) {
+            <p class="error">{{ formError() }}</p>
+          }
+          <button type="button" class="btn-primary" (click)="add()">
+            <span class="material-symbols-outlined">add</span> Ajouter
+          </button>
+        </div>
+      </div>
+    </section>
+  } @else {
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Regrouper par">
+        @for (option of groupOptions; track option[0]) {
+          <button type="button" [class.on]="by() === option[0]" (click)="by.set(option[0])">
+            {{ option[1] }}
+          </button>
+        }
+      </div>
+
+      <select
+        aria-label="Période"
+        [value]="period()"
+        (change)="period.set($any($event.target).value)"
+      >
+        @for (item of periods; track item.value) {
+          <option [value]="item.value" [selected]="item.value === period()">
+            {{ item.label }}
+          </option>
+        }
+      </select>
+
+      @if (period() === 'custom') {
+        <input
+          type="date"
+          aria-label="Du"
+          [value]="from()"
+          (change)="from.set($any($event.target).value)"
+        />
+        <span class="to">→</span>
+        <input
+          type="date"
+          aria-label="Au"
+          [value]="to()"
+          (change)="to.set($any($event.target).value)"
+        />
+      }
+    </div>
+
+    <section class="card results">
+      <header>
+        <h2>{{ groupTitle() }}</h2>
+        <strong class="total">{{ format(total()) }}</strong>
+      </header>
+
+      @for (group of groups(); track group.key) {
+        <div class="row">
+          <div class="row-head">
+            <span class="name">{{ groupLabel(group.label) }}</span>
+            <span class="value">
+              {{ format(group.minutes) }}
+              <small>{{ share(group.minutes) }} %</small>
+            </span>
+          </div>
+          <div class="bar">
+            <div class="fill" [style.width.%]="(group.minutes / maxMinutes()) * 100"></div>
+          </div>
+          <div class="row-sub">
+            @if (by() === 'task') {
+              @if (group.estimate) {
+                <span [class.over]="(group.spentAll ?? 0) > group.estimate">
+                  {{ format(group.spentAll ?? 0) }} passées /
+                  {{ formatEstimate(group.estimate) }} estimées
+                </span>
+              } @else {
+                Pas d'estimation
+              }
+            } @else {
+              {{ group.tasks }} tâche(s)
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="empty">Aucun temps enregistré sur cette période.</p>
+      }
+
+      @if (by() === 'tag' && groups().length > 1) {
+        <p class="hint">
+          Une tâche avec plusieurs étiquettes compte en entier dans chacune : les pourcentages
+          peuvent dépasser 100 % au total.
+        </p>
+      }
+    </section>
+
+    <section class="card history">
+      <h2>Saisies de la période</h2>
+      <ul class="entries">
+        @for (item of entries(); track item.log.id) {
+          <li>
+            <span class="when">{{ dateLabel(item.log.date) }}</span>
+            <span class="title">
+              {{ item.title }}
+              @if (item.log.note) {
+                <small>{{ item.log.note }}</small>
+              }
+            </span>
+            <strong>{{ format(minutesOf(item.log)) }}</strong>
+            <button
+              type="button"
+              class="del"
+              title="Supprimer cette saisie"
+              (click)="timeLog.remove(item.log.id)"
+            >
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </li>
+        } @empty {
+          <li class="empty">Rien à afficher.</li>
+        }
+      </ul>
+    </section>
+  }
+}

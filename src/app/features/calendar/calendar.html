@@ -227,6 +227,14 @@
                 (dblclick)="addEventAt(col.day.iso, $event)"
               >
                 <div class="slots">
+                  @for (band of col.bands; track $index) {
+                    <div
+                      class="band"
+                      [class.break]="band.kind === 'break'"
+                      [style.top.%]="band.top"
+                      [style.height.%]="band.height"
+                    ></div>
+                  }
                   @for (slot of col.timed; track slot.event.key) {
                     <button
                       type="button"

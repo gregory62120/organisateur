@@ -92,6 +92,12 @@ export interface Task {
   /** Créneaux planifiés des parties d'une tâche scindée. */
   workSlots?: WorkSlot[];
 
+  /**
+   * Interruption voulue : cette tâche est interrompue par la tâche `by` après `afterMinutes` de
+   * travail, puis reprise juste après. Le plan place « début de la tâche, l'autre, reprise ».
+   */
+  interruption?: { by: string; afterMinutes: number };
+
   /** Peut se faire pendant une réunion : le plan ne la décale pas autour des réunions. */
   duringMeetings?: boolean;
 

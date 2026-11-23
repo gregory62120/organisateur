@@ -32,6 +32,11 @@ export const routes: Routes = [
       },
 
       {
+        path: 'time',
+        loadComponent: () => import('./features/time/time').then((c) => c.TimeComponent),
+      },
+
+      {
         path: 'gantt',
         loadComponent: () => import('./features/gantt/gantt').then((c) => c.GanttComponent),
       },
