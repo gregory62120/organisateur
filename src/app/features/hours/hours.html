@@ -1,0 +1,261 @@
+<header class="page-head">
+  <div>
+    <h1>Mes heures</h1>
+    <p class="subtitle">
+      Saisissez vos horaires du matin et de l'après-midi (la pause du midi est l'écart entre les
+      deux) : les heures supplémentaires et manquantes sont calculées.
+    </p>
+  </div>
+
+  <button type="button" class="btn-primary" (click)="prefill()" [disabled]="!storage.isOpen()">
+    <span class="material-symbols-outlined">auto_fix_high</span>
+    Pré-remplir la semaine
+  </button>
+</header>
+
+@if (!storage.isOpen()) {
+  <section class="empty-state">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h2>Aucun projet ouvert</h2>
+    <p>
+      Ouvrez un dossier : vos horaires sont enregistrés dans le fichier <code>timesheet.json</code>.
+    </p>
+    <button type="button" class="btn-primary" (click)="openProject()">
+      <span class="material-symbols-outlined">create_new_folder</span>
+      Ouvrir un projet
+    </button>
+  </section>
+} @else {
+  <div class="summary">
+    <article class="card">
+      <span class="label">Semaine</span>
+      <strong>{{ format(week().worked) }}</strong>
+      <span class="sub">sur {{ format(week().expected) }} dues</span>
+    </article>
+    <article class="card" [attr.data-tone]="tone(week().balance)">
+      <span class="label">Heures de la semaine</span>
+      <strong>{{ format(week().balance, true) }}</strong>
+      <span class="sub">{{ week().balance >= 0 ? 'supplémentaires' : 'manquantes' }}</span>
+    </article>
+    <article class="card" [attr.data-tone]="tone(cumulative())">
+      <span class="label">Solde cumulé</span>
+      <strong>{{ format(cumulative(), true) }}</strong>
+      <span class="sub">depuis votre première saisie</span>
+    </article>
+  </div>
+
+  <section class="card week">
+    <header class="week-head">
+      <div class="nav">
+        <button type="button" class="icon" aria-label="Semaine précédente" (click)="shift(-1)">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <h2>{{ weekTitle() }}</h2>
+        <button type="button" class="icon" aria-label="Semaine suivante" (click)="shift(1)">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+      <button type="button" class="link" (click)="goToday()" [disabled]="isCurrentWeek()">
+        Cette semaine
+      </button>
+    </header>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Jour</th>
+            <th>Matin : début</th>
+            <th>Matin : fin</th>
+            <th>Après-midi : début</th>
+            <th>Après-midi : fin</th>
+            <th>Autre pause (min)</th>
+            <th>Absence</th>
+            <th class="num">Travaillé</th>
+            <th class="num">Dû</th>
+            <th class="num">Écart</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.result.date) {
+            <tr [class.today]="row.isToday" [class.off]="row.result.contract === 0">
+              <td class="day">
+                <strong>{{ row.label }}</strong>
+                <span>{{ row.dayNumber }}</span>
+              </td>
+              <td>
+                <input
+                  type="time"
+                  aria-label="Début du matin"
+                  [value]="row.entry?.amStart ?? ''"
+                  [disabled]="!!row.entry?.absence"
+                  (change)="setTime(row.result.date, 'amStart', $any($event.target).value)"
+                />
+              </td>
+              <td>
+                <input
+                  type="time"
+                  aria-label="Fin du matin"
+                  [value]="row.entry?.amEnd ?? ''"
+                  [disabled]="!!row.entry?.absence"
+                  (change)="setTime(row.result.date, 'amEnd', $any($event.target).value)"
+                />
+              </td>
+              <td>
+                <input
+                  type="time"
+                  aria-label="Début de l'après-midi"
+                  [value]="row.entry?.pmStart ?? ''"
+                  [disabled]="!!row.entry?.absence"
+                  (change)="setTime(row.result.date, 'pmStart', $any($event.target).value)"
+                />
+              </td>
+              <td>
+                <input
+                  type="time"
+                  aria-label="Fin de l'après-midi"
+                  [value]="row.entry?.pmEnd ?? ''"
+                  [disabled]="!!row.entry?.absence"
+                  (change)="setTime(row.result.date, 'pmEnd', $any($event.target).value)"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  min="0"
+                  step="5"
+                  placeholder="0"
+                  aria-label="Pause en minutes"
+                  [value]="row.entry?.breakMinutes ?? ''"
+                  [disabled]="!!row.entry?.absence"
+                  (change)="setBreak(row.result.date, $any($event.target).value)"
+                />
+              </td>
+              <td>
+                <select
+                  aria-label="Absence"
+                  [value]="row.entry?.absence ?? ''"
+                  (change)="setAbsence(row.result.date, $any($event.target).value)"
+                >
+                  <option value="" [selected]="!row.entry?.absence">—</option>
+                  @for (absence of absences; track absence) {
+                    <option [value]="absence" [selected]="row.entry?.absence === absence">
+                      {{ absenceLabels[absence] }}
+                    </option>
+                  }
+                </select>
+              </td>
+              <td class="num">
+                {{ row.result.status === 'worked' ? format(row.result.worked) : '–' }}
+              </td>
+              <td class="num">
+                {{ row.result.contract || row.result.expected ? format(row.result.expected) : '–' }}
+              </td>
+              <td class="num diff" [attr.data-tone]="tone(row.result.balance)">
+                @switch (row.result.status) {
+                  @case ('pending') {
+                    <span class="muted">à saisir</span>
+                  }
+                  @case ('missing') {
+                    <span title="Jour passé sans saisie">{{
+                      format(row.result.balance, true)
+                    }}</span>
+                  }
+                  @default {
+                    {{ format(row.result.balance, true) }}
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7">Total de la semaine</td>
+            <td class="num">{{ format(week().worked) }}</td>
+            <td class="num">{{ format(week().expected) }}</td>
+            <td class="num diff" [attr.data-tone]="tone(week().balance)">
+              {{ format(week().balance, true) }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p class="hint">
+      Un jour passé sans saisie compte comme heures manquantes. Une récupération consomme des heures
+      supplémentaires ; congé, férié et maladie n'en font perdre aucune.
+    </p>
+  </section>
+
+  <section class="card contract">
+    <header class="contract-head">
+      <h2>Mes horaires contractuels</h2>
+      <button type="button" class="link" (click)="contractOpen.set(!contractOpen())">
+        {{ contractOpen() ? 'Masquer' : 'Modifier' }} ({{ format(contractTotal()) }} par semaine)
+      </button>
+    </header>
+
+    @if (contractOpen()) {
+      <label class="weekly">
+        <span>Total par semaine</span>
+        <span class="weekly-input">
+          <input
+            type="number"
+            min="0"
+            max="168"
+            step="0.25"
+            aria-label="Total d'heures par semaine"
+            [value]="weeklyHours()"
+            (change)="setWeekly($any($event.target).value)"
+          />
+          heures
+        </span>
+        <small>
+          Réparties à parts égales sur {{ dayCount() }} jour(s)
+          @if (evenPerDay(); as perDay) {
+            : <strong>{{ perDay }}</strong> par jour
+          }
+        </small>
+      </label>
+
+      <div class="days-pick">
+        <span class="days-label">Jours travaillés</span>
+        <span class="chips">
+          @for (name of weekdays; track name; let i = $index) {
+            <button
+              type="button"
+              class="day-chip"
+              [class.on]="timesheet.contract().days[i]"
+              [attr.aria-pressed]="timesheet.contract().days[i]"
+              (click)="toggleDay(i)"
+            >
+              {{ name.slice(0, 3) }}
+            </button>
+          }
+        </span>
+      </div>
+
+      <div class="contract-grid">
+        @for (name of weekdays; track name; let i = $index) {
+          <label>
+            <span>{{ name }}</span>
+            <input
+              type="number"
+              min="0"
+              max="24"
+              step="0.25"
+              [value]="contractHours(i)"
+              (change)="setContract(i, $any($event.target).value)"
+            />
+            <small>heures</small>
+          </label>
+        }
+      </div>
+      <p class="hint">
+        Vous pouvez ensuite ajuster un jour (par exemple un vendredi plus court) : elle sert à
+        calculer les heures en plus ou en moins. Elle est enregistrée dans ce navigateur.
+      </p>
+    }
+  </section>
+}
