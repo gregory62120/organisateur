@@ -5,11 +5,23 @@ import { PRIORITY_LABELS } from '../../../core/models/task-labels';
 import { buildPlan, PlanDay, PlanItem } from '../../../core/models/planner';
 import { uniqueAssignees } from '../../../core/models/task-state';
 import { EventService } from '../../../core/services/event.service';
+import { fromMinutes, toMinutes } from '../../../core/models/schedule';
+import { logMinutes } from '../../../core/models/time-log';
+import { TimeLogService } from '../../../core/services/time-log.service';
 import { ScheduleService } from '../../../core/services/schedule.service';
 import { TaskService } from '../../../core/services/task.service';
 import { TaskDialogService } from '../../kanban/services/task-dialog.service';
 
 const ASSIGNEE_KEY = 'tf-planner-assignee';
+
+interface TimelineBlock {
+  kind: 'break' | 'meeting' | 'task' | 'fixed';
+  from: number;
+  to: number;
+  label: string;
+  task?: Task;
+  priority?: Task['priority'];
+}
 
 @Component({
   selector: 'app-planner',
@@ -22,6 +34,7 @@ export class PlannerComponent {
   private readonly dialogs = inject(TaskDialogService);
   private readonly eventService = inject(EventService);
   readonly schedule = inject(ScheduleService);
+  private readonly timeLog = inject(TimeLogService);
   readonly scheduleOpen = signal(false);
 
   readonly priorityLabels = PRIORITY_LABELS;
@@ -46,21 +59,31 @@ export class PlannerComponent {
     return result;
   });
 
+  /** Temps déjà passé par tâche (minutes) : une tâche reprise ne compte que le reste à faire. */
+  private readonly spent = computed(() => {
+    const totals: Record<string, number> = {};
+    for (const log of this.timeLog.logs()) {
+      totals[log.taskId] = (totals[log.taskId] ?? 0) + logMinutes(log);
+    }
+    return totals;
+  });
+
   readonly plan = computed(() =>
     buildPlan(this.taskService.tasksSignal(), {
       today: new Date(),
       days: this.horizon(),
       assignee: this.assignee() || undefined,
       busy: this.busy(),
+      spent: this.spent(),
       schedule: this.schedule.forDay,
     }),
   );
 
   readonly sourceLabel = computed(() => {
     const plan = this.plan();
-    return plan.capacitySource === 'history'
-      ? `${plan.capacityHours} h/jour, d'après vos 28 derniers jours`
-      : `${plan.capacityHours} h/jour (par défaut, l'historique est encore court)`;
+    return plan.capacitySource === 'custom'
+      ? `Plafond de ${plan.capacityHours} h par jour`
+      : 'Tout le temps libre de vos horaires est utilisé (pauses et réunions déduites)';
   });
 
   setAssignee(name: string) {
@@ -176,7 +199,7 @@ export class PlannerComponent {
   /** Retire la prise en charge (dates et heures) d'une tâche. */
   unplan(task: Task, part?: number) {
     const current = this.latest(task);
-    if (current.workSlots?.length && part !== undefined) {
+    if (current.split && part !== undefined) {
       this.taskService.update({
         ...current,
         workSlots: (current.workSlots ?? []).filter((slot) => slot.part !== part),
@@ -220,6 +243,134 @@ export class PlannerComponent {
       item.task.workStartTime === item.start &&
       item.task.workEndTime === item.end
     );
+  }
+
+  // ---- Interruption : « je commence A, B l'interrompt, je reprends A après »
+  /** Calendrier de la journée (heures, pauses, réunions, tâches) au-dessus de la liste. */
+  readonly showCalendar = signal(true);
+
+  /** Hauteur (px) d'une heure dans le calendrier d'une journée. */
+  readonly hourPx = 34;
+
+  readonly timelines = computed(() => {
+    const busy = this.busy();
+    return new Map(
+      this.plan().days.map((day) => {
+        const schedule = this.schedule.forDay(day.date);
+        const open = toMinutes(schedule.start);
+        const close = toMinutes(schedule.end);
+        const blocks: TimelineBlock[] = [];
+        for (const pause of schedule.breaks) {
+          blocks.push({
+            kind: 'break',
+            from: toMinutes(pause.start),
+            to: toMinutes(pause.end),
+            label: 'Pause',
+          });
+        }
+        for (const meeting of busy[day.date] ?? []) {
+          blocks.push({ kind: 'meeting', from: meeting.start, to: meeting.end, label: 'Réunion' });
+        }
+        for (const item of day.items) {
+          for (const segment of item.segments ?? []) {
+            blocks.push({
+              kind: item.fixed ? 'fixed' : 'task',
+              from: toMinutes(segment.start),
+              to: toMinutes(segment.end),
+              label: item.part
+                ? `${item.task.title} (${item.part}/${item.parts})`
+                : item.task.title,
+              task: item.task,
+              priority: item.task.priority,
+            });
+          }
+        }
+        // La fenêtre couvre les horaires, et déborde si une tâche ou une réunion sort des horaires.
+        const first = Math.min(open, ...blocks.map((block) => block.from));
+        const last = Math.max(close, ...blocks.map((block) => block.to));
+        const from = Math.floor(first / 60) * 60;
+        const to = Math.ceil(last / 60) * 60;
+        const span = Math.max(60, to - from);
+        const pct = (minutes: number) => ((minutes - from) / span) * 100;
+        const hours: { label: string; top: number }[] = [];
+        for (let m = from; m < to; m += 60) {
+          hours.push({ label: `${m / 60}h`, top: pct(m) });
+        }
+        const off: { top: number; height: number }[] = schedule.off
+          ? [{ top: 0, height: 100 }]
+          : [
+              { top: 0, height: pct(open) },
+              { top: pct(close), height: 100 - pct(close) },
+            ].filter((band) => band.height > 0);
+        return [
+          day.date,
+          {
+            height: (span / 60) * this.hourPx,
+            hours,
+            off,
+            blocks: blocks.map((block) => ({
+              ...block,
+              top: pct(block.from),
+              height: Math.max(2, ((block.to - block.from) / span) * 100),
+              range: `${fromMinutes(block.from)} – ${fromMinutes(block.to)}`,
+            })),
+          },
+        ] as const;
+      }),
+    );
+  });
+
+  readonly interrupting = signal<string | null>(null);
+  readonly interruptBy = signal('');
+  readonly interruptAfter = signal('');
+
+  /** Tâches qui peuvent en interrompre une autre : ouvertes, visibles, pas écartées du plan. */
+  interrupters(task: Task): Task[] {
+    return this.taskService
+      .tasksSignal()
+      .filter(
+        (other) =>
+          other.id !== task.id &&
+          other.status !== 'DONE' &&
+          !other.archived &&
+          other.showInKanban !== false &&
+          !other.planIgnored,
+      )
+      .sort((a, b) => a.title.localeCompare(b.title, 'fr'));
+  }
+
+  startInterrupt(item: PlanItem) {
+    this.interrupting.set(item.task.id);
+    this.interruptBy.set('');
+    // Par défaut on interrompt à la moitié du travail, au quart d'heure près.
+    this.interruptAfter.set(String(Math.max(15, Math.round((item.hours * 30) / 15) * 15)));
+  }
+
+  confirmInterrupt(task: Task) {
+    const by = this.interruptBy();
+    const afterMinutes = Math.max(0, Number(this.interruptAfter().replace(',', '.')) || 0);
+    if (!by) {
+      return;
+    }
+    this.taskService.update({
+      ...this.latest(task),
+      interruption: { by, afterMinutes },
+      // L'ancienne planification n'est plus valable : le plan recalcule début, interruption, reprise.
+      workSlots: undefined,
+      workStart: undefined,
+      workEnd: undefined,
+      workStartTime: undefined,
+      workEndTime: undefined,
+    });
+    this.interrupting.set(null);
+  }
+
+  clearInterruption(task: Task) {
+    this.taskService.update({
+      ...this.latest(task),
+      interruption: undefined,
+      workSlots: undefined,
+    });
   }
 
   ignore(task: Task) {
