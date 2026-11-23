@@ -12,6 +12,9 @@ export const DEFAULT_CAPACITY_HOURS = 6;
 
 const HISTORY_DAYS = 28;
 
+/** Durée minimale (minutes) d'un morceau quand une tâche est coupée par une pause. */
+const MIN_SEGMENT = 30;
+
 const PRIORITY_SCORE = { LOW: 10, MEDIUM: 25, HIGH: 45 } as const;
 
 export interface PlanOptions {
@@ -42,6 +45,13 @@ export interface PlanItem {
   /** Créneau proposé (HH:mm), une fois la tâche placée dans une journée. */
   start?: string;
   end?: string;
+  /** Créneau déjà planifié par l'utilisateur : conservé, les autres tâches se placent autour. */
+  fixed?: boolean;
+  /** Plages de travail proposées : plusieurs quand une pause ou une réunion coupe la tâche. */
+  segments?: { start: string; end: string }[];
+  /** Partie d'une tâche scindée (à partir de 1) et nombre total de parties. */
+  part?: number;
+  parts?: number;
   score: number;
   reasons: string[];
 }
@@ -210,7 +220,10 @@ function scoreTask(
     reasons.push('En revue : à boucler');
   }
 
-  if (
+  if (task.workSlots?.some((slot) => slot.date === toDateKey(today))) {
+    score += 35;
+    reasons.push('Prévue pour aujourd’hui');
+  } else if (
     task.workStart &&
     task.workEnd &&
     task.workStart <= toDateKey(today) &&
@@ -252,16 +265,33 @@ export function buildPlan(allTasks: Task[], options: PlanOptions): Plan {
     .filter(
       (task) => !me || !task.assignedTo?.trim() || task.assignedTo.trim().toLowerCase() === me,
     )
-    .map<PlanItem>((task) => {
+    .flatMap<PlanItem>((task) => {
       const { score, reasons } = scoreTask(task, options.today, history);
-      return {
-        task,
-        score,
-        reasons,
-        hours: task.estimateHours ?? history.medianEstimate ?? DEFAULT_ESTIMATE_HOURS,
-      };
+      if (task.split && task.split.length > 1) {
+        // Tâche scindée : chaque partie est placée séparément, dans l'ordre.
+        return task.split.map((hours, index) => ({
+          task,
+          score,
+          reasons: [`Partie ${index + 1}/${task.split?.length}`, ...reasons],
+          hours,
+          part: index + 1,
+          parts: task.split?.length,
+        }));
+      }
+      return [
+        {
+          task,
+          score,
+          reasons,
+          hours: task.estimateHours ?? history.medianEstimate ?? DEFAULT_ESTIMATE_HOURS,
+        },
+      ];
     })
-    .sort((a, b) => b.score - a.score || a.hours - b.hours);
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        (a.task === b.task ? (a.part ?? 0) - (b.part ?? 0) : a.hours - b.hours),
+    );
 
   // Plages occupées par jour : pauses, réunions du calendrier, puis tâches déjà placées.
   const todayKey = toDateKey(options.today);
@@ -275,12 +305,14 @@ export function buildPlan(allTasks: Task[], options: PlanOptions): Plan {
           start: toMinutes(b.start),
           end: toMinutes(b.end),
         })),
-        ...(options.busy?.[day.date] ?? []),
       ],
     ]),
   );
-  const isFree = (date: string, from: number, to: number) =>
-    !(occupied.get(date) ?? []).some((block) => from < block.end && to > block.start);
+  /** Libre de pause et de tâche ; les réunions comptent aussi, sauf si `overMeetings`. */
+  const isFree = (date: string, from: number, to: number, overMeetings = false) =>
+    !(occupied.get(date) ?? []).some((block) => from < block.end && to > block.start) &&
+    (overMeetings ||
+      !(options.busy?.[date] ?? []).some((meeting) => from < meeting.end && to > meeting.start));
   /** Première minute (au quart d'heure) où le jour est ouvert au travail. */
   const windowOf = (date: string) => {
     const schedule = scheduleOf(date);
@@ -288,37 +320,52 @@ export function buildPlan(allTasks: Task[], options: PlanOptions): Plan {
     const floor = date === todayKey ? Math.max(open, Math.ceil(nowMinutes / 15) * 15) : open;
     return { floor, close: toMinutes(schedule.end), off: !!schedule.off };
   };
-  /** Créneau d'un seul tenant de `minutes`, ou `undefined`. */
-  const findSlot = (date: string, minutes: number): { start: number; end: number } | undefined => {
-    const { floor, close, off } = windowOf(date);
+  /**
+   * Segments où placer `minutes` de travail dans la journée : on commence à la première plage libre
+   * et, quand une pause ou une réunion l'interrompt, on reprend à la plage libre suivante pour le
+   * temps restant. Les plages de moins de 30 min sont ignorées (sauf pour finir). Renvoie `undefined`
+   * si la journée n'a pas assez de temps libre, sauf si `partial` : on place alors ce qui tient.
+   */
+  const findSegments = (
+    date: string,
+    minutes: number,
+    minStart: number,
+    partial: boolean,
+    overMeetings: boolean,
+  ): { start: number; end: number }[] | undefined => {
+    const { floor: open, close, off } = windowOf(date);
     if (off) {
       return undefined;
     }
-    for (let start = floor; start + minutes <= close; start += 15) {
-      if (isFree(date, start, start + minutes)) {
-        return { start, end: start + minutes };
+    const floor = Math.max(open, Math.ceil(minStart / 15) * 15);
+    // Plages libres, au quart d'heure.
+    const runs: { start: number; end: number }[] = [];
+    for (let t = floor; t < close; t += 15) {
+      if (!isFree(date, t, t + 15, overMeetings)) {
+        continue;
+      }
+      const last = runs[runs.length - 1];
+      if (last && last.end === t) {
+        last.end = t + 15;
+      } else {
+        runs.push({ start: t, end: t + 15 });
       }
     }
-    return undefined;
-  };
-  /** Pour une tâche plus longue que n'importe quelle plage libre : elle s'étale en enjambant les pauses. */
-  const findSpanning = (date: string, minutes: number) => {
-    const { floor, close, off } = windowOf(date);
-    if (off) {
-      return undefined;
-    }
-    let start: number | undefined;
+    const segments: { start: number; end: number }[] = [];
     let left = minutes;
-    for (let t = floor; t < close && left > 0; t += 15) {
-      if (isFree(date, t, t + 15)) {
-        start ??= t;
-        left -= 15;
-        if (left <= 0) {
-          return { start, end: t + 15 };
-        }
+    for (const run of runs) {
+      const length = run.end - run.start;
+      if (length < MIN_SEGMENT && length < left) {
+        continue;
+      }
+      const take = Math.min(length, left);
+      segments.push({ start: run.start, end: run.start + take });
+      left -= take;
+      if (left <= 0) {
+        return segments;
       }
     }
-    return start !== undefined ? { start, end: close } : undefined;
+    return partial && segments.length > 0 ? segments : undefined;
   };
   // Capacité de chaque jour : celle apprise, limitée par le temps réellement libre.
   for (const day of days) {
@@ -334,11 +381,75 @@ export function buildPlan(allTasks: Task[], options: PlanOptions): Plan {
   }
 
   const later: PlanItem[] = [];
+  /** Où s'est terminée la partie précédente d'une tâche scindée (la suivante vient après). */
+  const lastPart = new Map<string, { date: string; end: number }>();
+
+  // Tâches déjà planifiées (aujourd'hui ou plus tard) : leur créneau est conservé tel quel, et les
+  // autres tâches se placent autour. Une planification passée est périmée : la tâche est replacée.
+  const plannedSlot = (item: PlanItem) => {
+    const task = item.task;
+    const slots = (task.workSlots ?? []).filter(
+      (slot) => slot.part === (item.part ?? 0) && slot.date >= todayKey && slot.start && slot.end,
+    );
+    if (slots.length > 0) {
+      const date = slots[0].date;
+      return {
+        date,
+        segments: slots
+          .filter((slot) => slot.date === date)
+          .map((slot) => ({ start: slot.start as string, end: slot.end as string })),
+      };
+    }
+    if (
+      item.part === undefined &&
+      !task.workSlots?.length &&
+      task.workStart &&
+      task.workStart === task.workEnd &&
+      task.workStart >= todayKey &&
+      task.workStartTime &&
+      task.workEndTime
+    ) {
+      return {
+        date: task.workStart,
+        segments: [{ start: task.workStartTime, end: task.workEndTime }],
+      };
+    }
+    return undefined;
+  };
+  const toPlace: PlanItem[] = [];
   for (const item of candidates) {
+    const planned = plannedSlot(item);
+    const day = planned && days.find((d) => d.date === planned.date);
+    if (!planned || !day) {
+      toPlace.push(item);
+      continue;
+    }
+    item.segments = planned.segments;
+    item.start = planned.segments[0].start;
+    item.end = planned.segments[planned.segments.length - 1].end;
+    item.fixed = true;
+    item.reasons = [
+      'Planifiée',
+      ...item.reasons.filter((reason) => reason !== 'Prévue pour aujourd’hui'),
+    ];
+    occupied
+      .get(day.date)
+      ?.push(
+        ...planned.segments.map((s) => ({ start: toMinutes(s.start), end: toMinutes(s.end) })),
+      );
+    lastPart.set(item.task.id, {
+      date: day.date,
+      end: toMinutes(planned.segments[planned.segments.length - 1].end),
+    });
+    day.items.push(item);
+    day.hours += item.hours;
+  }
+
+  for (const item of toPlace) {
     // Une tâche ne démarre pas avant sa date de début ni avant le début de sa période prévue.
     const earliest = [item.task.startDate, item.task.workStart].filter(Boolean).sort().pop();
     const minutes = Math.round(item.hours * 60);
-    let placed: { start: number; end: number } | undefined;
+    let placed: { start: number; end: number }[] | undefined;
     const slot = days.find((day) => {
       if (earliest && earliest > day.date) {
         return false;
@@ -346,15 +457,33 @@ export function buildPlan(allTasks: Task[], options: PlanOptions): Plan {
       if (day.off || (day.hours + item.hours > day.capacity && day.items.length > 0)) {
         return false;
       }
-      placed =
-        findSlot(day.date, minutes) ??
-        (day.items.length === 0 ? findSpanning(day.date, minutes) : undefined);
+      const before = (item.part ?? 1) > 1 ? lastPart.get(item.task.id) : undefined;
+      if ((item.part ?? 1) > 1 && !before) {
+        return false;
+      }
+      if (before && day.date < before.date) {
+        return false;
+      }
+      const minStart = before && day.date === before.date ? before.end : 0;
+      placed = findSegments(
+        day.date,
+        minutes,
+        minStart,
+        day.items.length === 0,
+        !!item.task.duringMeetings,
+      );
       return placed !== undefined;
     });
     if (slot && placed) {
-      item.start = formatMinutes(placed.start);
-      item.end = formatMinutes(Math.min(placed.end, 24 * 60 - 1));
-      occupied.get(slot.date)?.push({ start: placed.start, end: placed.end });
+      const segments = placed as { start: number; end: number }[];
+      item.segments = segments.map((segment) => ({
+        start: formatMinutes(segment.start),
+        end: formatMinutes(Math.min(segment.end, 24 * 60 - 1)),
+      }));
+      item.start = item.segments[0].start;
+      item.end = item.segments[item.segments.length - 1].end;
+      occupied.get(slot.date)?.push(...segments);
+      lastPart.set(item.task.id, { date: slot.date, end: segments[segments.length - 1].end });
       slot.items.push(item);
       slot.hours += item.hours;
     } else {

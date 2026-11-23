@@ -47,6 +47,7 @@
       min="0"
       step="0.5"
       placeholder="ex. 2"
+      [disabled]="splitOn()"
       [value]="estimateHours()"
       (input)="estimateHours.set($any($event.target).value)"
     />
@@ -80,12 +81,54 @@
     />
   </label>
 
-  @if (workStart() || workStartTime()) {
-    <button type="button" class="btn-secondary" (click)="unplan()">
+  @if (workStart() || workStartTime() || splitOn()) {
+    <button type="button" class="unplan" (click)="unplan()">
       <span class="material-symbols-outlined">event_busy</span>
       Déplanifier
     </button>
   }
+
+  <label class="check">
+    <input
+      type="checkbox"
+      [checked]="splitOn()"
+      (change)="toggleSplit($any($event.target).checked)"
+    />
+    <span>Scinder en deux parties (pour tenir compte d'une pause)</span>
+  </label>
+
+  @if (splitOn()) {
+    <label>
+      <span>Partie 1 (h)</span>
+      <input
+        type="number"
+        min="0"
+        step="0.5"
+        [value]="part1()"
+        (input)="part1.set($any($event.target).value)"
+      />
+    </label>
+
+    <label>
+      <span>Partie 2 (h)</span>
+      <input
+        type="number"
+        min="0"
+        step="0.5"
+        [value]="part2()"
+        (input)="part2.set($any($event.target).value)"
+      />
+    </label>
+  }
+
+  <label class="check">
+    <input
+      type="checkbox"
+      [checked]="duringMeetings()"
+      (change)="duringMeetings.set($any($event.target).checked)"
+    />
+    <span>Peut se faire pendant une réunion</span>
+  </label>
 
   <label class="check">
     <input
