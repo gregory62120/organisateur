@@ -270,20 +270,17 @@ export class GithubSyncService {
     path: string,
     headers: Record<string, string>,
   ): Promise<string> {
-    const json = await this.githubFetch(
+    // Le type « raw » renvoie le fichier tel quel, même au-delà de 1 Mo où l'API « contents » ne donne plus de contenu.
+    const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`,
-      headers,
+      { headers: { ...headers, Accept: 'application/vnd.github.raw+json' } },
     );
 
-    if (!json.content) {
-      throw new Error(`Le fichier ${path} est introuvable dans GitHub`);
+    if (!response.ok) {
+      throw new Error(`GitHub API ${response.status}: ${await response.text()}`);
     }
 
-    const binary = atob(json.content.replace(/\n/g, ''));
-
-    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-
-    return new TextDecoder().decode(bytes);
+    return response.text();
   }
 
   private async createBlob(owner: string, repo: string, content: string, token: string) {
