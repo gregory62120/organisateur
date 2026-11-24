@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, OnInit } from '@angular/core';
 
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SearchBar } from '../search-bar/search-bar';
+import { GithubTokenService } from '../../core/services/github-token.service';
 import { GithubSyncService } from '../../core/services/github-sync.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -27,6 +28,7 @@ export class Sidebar {
 }
   `;
   private readonly githubSync = inject(GithubSyncService);
+  private readonly githubToken = inject(GithubTokenService);
   private readonly storageService = inject(StorageService);
 
   readonly syncing = this.githubSync.syncing;
@@ -88,7 +90,7 @@ export class Sidebar {
   }
 
   async synchronize(): Promise<void> {
-    const token = prompt('Token GitHub');
+    const token = await this.githubToken.request('envoyer');
 
     if (!token) {
       return;
@@ -101,21 +103,39 @@ export class Sidebar {
     } catch (error) {
       console.error(error);
 
+      this.offerToForget(token, error);
       alert(error instanceof Error ? error.message : 'Erreur lors de la synchronisation.');
     }
   }
 
   async pullFromGithub() {
     try {
-      const token = prompt('Token GitHub');
+      const token = await this.githubToken.request('récupérer');
 
       if (!token) {
         return;
       }
 
-      await this.githubSync.pull(token);
+      try {
+        await this.githubSync.pull(token);
+      } catch (error) {
+        this.offerToForget(token, error);
+        throw error;
+      }
     } catch (error) {
       console.error('Erreur lors de la récupération GitHub', error);
+    }
+  }
+
+  /** Si GitHub refuse le token mémorisé (401), on propose de l'oublier pour ne pas le reproposer. */
+  private offerToForget(token: string, error: unknown) {
+    const refused = error instanceof Error && /GitHub API 401/.test(error.message);
+    if (
+      refused &&
+      token === this.githubToken.saved() &&
+      confirm('GitHub a refusé le token enregistré. Voulez-vous l’oublier ?')
+    ) {
+      this.githubToken.forget();
     }
   }
 }
