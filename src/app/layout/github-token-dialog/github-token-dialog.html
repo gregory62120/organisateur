@@ -1,0 +1,76 @@
+<header class="head">
+  <h2 class="heading">Token GitHub</h2>
+  <button type="button" class="icon-btn" title="Fermer" (click)="close()">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+</header>
+
+@if (!entering() && data.saved) {
+  <p class="lead">
+    Un token est enregistré dans ce navigateur. Voulez-vous le réutiliser pour
+    {{ data.purpose }} vos données ?
+  </p>
+
+  <div class="saved">
+    <span class="material-symbols-outlined">key</span>
+    <code>{{ data.saved }}</code>
+  </div>
+
+  <footer class="actions">
+    <button type="button" class="btn-danger" (click)="forget()">
+      <span class="material-symbols-outlined">delete</span>
+      Oublier ce token
+    </button>
+    <span class="spacer"></span>
+    <button type="button" class="btn-secondary" (click)="entering.set(true)">
+      Saisir un autre token
+    </button>
+    <button type="button" class="btn-primary" (click)="useSaved()">Utiliser ce token</button>
+  </footer>
+} @else {
+  <p class="lead">Saisissez votre token GitHub pour {{ data.purpose }} vos données.</p>
+
+  <label>
+    <span>Token</span>
+    <input
+      type="password"
+      class="token-input"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="ghp_…"
+      [value]="token()"
+      (input)="token.set($any($event.target).value)"
+      (keydown.enter)="submit()"
+    />
+  </label>
+
+  <label class="toggle">
+    <input
+      type="checkbox"
+      [checked]="remember()"
+      (change)="remember.set($any($event.target).checked)"
+    />
+    <span>Mémoriser ce token dans ce navigateur</span>
+  </label>
+
+  @if (remember()) {
+    <p class="warn">
+      <span class="material-symbols-outlined">warning</span>
+      Le token est conservé en clair dans le stockage du navigateur : ne le faites que sur votre
+      appareil personnel, avec un token limité au dépôt de sauvegarde.
+    </p>
+  }
+
+  <footer class="actions">
+    @if (data.saved) {
+      <button type="button" class="btn-secondary" (click)="entering.set(false)">
+        Retour au token enregistré
+      </button>
+    }
+    <span class="spacer"></span>
+    <button type="button" class="btn-secondary" (click)="close()">Annuler</button>
+    <button type="button" class="btn-primary" [disabled]="!token().trim()" (click)="submit()">
+      Continuer
+    </button>
+  </footer>
+}
