@@ -51,10 +51,11 @@ export class StorageService {
   }
 
   async read(path: string): Promise<string | undefined> {
-    while (this.modal.isOpen()) {}
     const root = this.getRoot();
     if (!root) {
-      this.modal.openPopup();
+      if (!this.modal.isOpen()) {
+        this.modal.openPopup();
+      }
       return;
     }
     const handle = await root.getFileHandle(path);

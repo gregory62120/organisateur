@@ -70,6 +70,10 @@ export class GithubSyncService {
       throw new Error('Token GitHub manquant.');
     }
 
+    if (!this.storage.isOpen()) {
+      throw new Error('Ouvrez d’abord le projet (dossier de travail) avant de synchroniser.');
+    }
+
     this.syncingState.set(true);
 
     try {
