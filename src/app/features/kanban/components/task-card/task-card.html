@@ -92,6 +92,41 @@
     </section>
   }
 
+  @if (group() !== 'archived') {
+    <div class="timer" [class.on]="running()">
+      @if (running()) {
+        <button
+          type="button"
+          class="t-btn stop"
+          title="Arrêter et enregistrer le temps"
+          (click)="stopTimer($event)"
+        >
+          <span class="material-symbols-outlined">pause</span>
+          Arrêter
+        </button>
+        <button
+          type="button"
+          class="t-btn"
+          title="Annuler sans enregistrer"
+          (click)="cancelTimer($event)"
+        >
+          <span class="material-symbols-outlined">close</span>
+          Annuler
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="t-btn"
+          [title]="hasTime() ? 'Reprendre le chrono' : 'Lancer le chrono'"
+          (click)="startTimer($event)"
+        >
+          <span class="material-symbols-outlined">play_arrow</span>
+          {{ hasTime() ? 'Reprendre' : 'Commencer' }}
+        </button>
+      }
+    </div>
+  }
+
   <footer>
     <span class="priority" [attr.data-priority]="task().priority">
       <span class="material-symbols-outlined">flag</span>

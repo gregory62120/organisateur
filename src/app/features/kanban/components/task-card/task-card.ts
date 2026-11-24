@@ -1,4 +1,5 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { TimeLogService } from '../../../../core/services/time-log.service';
 import { Task } from '../../../../core/models/task.model';
 import { TaskGroup } from '../../../../core/models/task-state';
 import {
@@ -18,6 +19,8 @@ import {
   styleUrl: './task-card.scss',
 })
 export class TaskCardComponent {
+  private readonly timeLog = inject(TimeLogService);
+
   readonly task = input.required<Task>();
 
   /**
@@ -61,6 +64,14 @@ export class TaskCardComponent {
     return total ? Math.round((this.checklistDone() / total) * 100) : 0;
   });
 
+  /** Le chrono « Temps passé » tourne sur cette tâche. */
+  readonly running = computed(() => this.timeLog.timer()?.taskId === this.task().id);
+
+  /** Du temps a déjà été enregistré sur cette tâche : on propose alors de reprendre. */
+  readonly hasTime = computed(() =>
+    this.timeLog.logs().some((log) => log.taskId === this.task().id),
+  );
+
   readonly avatarBg = computed(() => avatarColor(this.task().assignedTo));
 
   readonly tone = tagTone;
@@ -71,6 +82,18 @@ export class TaskCardComponent {
   private act(event: Event, action: () => void) {
     event.stopPropagation();
     action();
+  }
+
+  startTimer(event: Event) {
+    this.act(event, () => this.timeLog.start(this.task().id));
+  }
+
+  stopTimer(event: Event) {
+    this.act(event, () => this.timeLog.stop());
+  }
+
+  cancelTimer(event: Event) {
+    this.act(event, () => this.timeLog.cancel());
   }
 
   toggleSubtasks(event: Event) {
