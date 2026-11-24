@@ -4,7 +4,6 @@ import { EVENTS_FILE, EventService } from './event.service';
 import { SUMMARIES_FILE, SummaryService } from './summary.service';
 import { MUSIC_PLAN_FILE, MusicPlanService } from './music-plan.service';
 import { MUSIC_FILE, MusicService } from './music.service';
-import { StorageService } from './storage.service';
 import { TaskService } from './task.service';
 
 interface GithubConfig {
@@ -17,7 +16,6 @@ interface GithubConfig {
   providedIn: 'root',
 })
 export class GithubSyncService {
-  private readonly storage = inject(StorageService);
   private readonly documentService = inject(DocumentService);
   private readonly taskService = inject(TaskService);
   private readonly eventService = inject(EventService);
@@ -29,15 +27,29 @@ export class GithubSyncService {
    * Fichiers qui n'existent qu'une fois utilisés (évènements, musique, planification, résumés) : ils sont synchronisés
    * s'ils sont présents, et leur absence n'empêche pas la synchronisation.
    */
-  private readonly optionalFiles: { path: string; apply: (json: string) => void }[] = [
-    { path: EVENTS_FILE, apply: (json) => this.eventService.updateEvents(JSON.parse(json)) },
-    { path: MUSIC_FILE, apply: (json) => this.musicService.updateTracks(JSON.parse(json)) },
+  private readonly optionalFiles: {
+    path: string;
+    current: () => unknown[];
+    apply: (json: string) => void;
+  }[] = [
+    {
+      path: EVENTS_FILE,
+      current: () => this.eventService.eventsSignal(),
+      apply: (json) => this.eventService.updateEvents(JSON.parse(json)),
+    },
+    {
+      path: MUSIC_FILE,
+      current: () => this.musicService.tracks(),
+      apply: (json) => this.musicService.updateTracks(JSON.parse(json)),
+    },
     {
       path: MUSIC_PLAN_FILE,
+      current: () => this.musicPlanService.slots(),
       apply: (json) => this.musicPlanService.updateSlots(JSON.parse(json)),
     },
     {
       path: SUMMARIES_FILE,
+      current: () => this.summaryService.summaries(),
       apply: (json) => this.summaryService.updateSummaries(JSON.parse(json)),
     },
   ];
@@ -70,28 +82,21 @@ export class GithubSyncService {
       throw new Error('Token GitHub manquant.');
     }
 
-    if (!this.storage.isOpen()) {
-      throw new Error('Ouvrez d’abord le projet (dossier de travail) avant de synchroniser.');
-    }
-
     this.syncingState.set(true);
 
     try {
       const { owner, repo, branch } = this.config;
 
-      const [tasks, documents, optional] = await Promise.all([
-        this.storage.read('tasks.json'),
-        this.storage.read('document.json'),
-        Promise.all(this.optionalFiles.map((file) => this.readOptional(file.path))),
-      ]);
-
-      if (tasks === undefined) {
-        throw new Error('Impossible de lire tasks.json');
-      }
-
-      if (documents === undefined) {
-        throw new Error('Impossible de lire document.json');
-      }
+      /*
+       * Les données en mémoire sont la référence : sur tablette (stockage privé du navigateur)
+       * les fichiers locaux ne sont pas forcément écrits.
+       */
+      const tasks = JSON.stringify(this.taskService.tasksSignal(), null, 2);
+      const documents = JSON.stringify(this.documentService.allPages());
+      const optional = this.optionalFiles.map((file) => {
+        const items = file.current();
+        return items.length ? JSON.stringify(items, null, 2) : undefined;
+      });
 
       const headers = {
         Authorization: `Bearer ${token}`,
@@ -252,18 +257,6 @@ export class GithubSyncService {
       this.lastSyncState.set(new Date());
     } finally {
       this.pullingState.set(false);
-    }
-  }
-
-  /** Contenu d'un fichier du projet, ou `undefined` s'il n'existe pas encore. */
-  private async readOptional(path: string): Promise<string | undefined> {
-    try {
-      return await this.storage.read(path);
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'NotFoundError') {
-        return undefined;
-      }
-      throw error;
     }
   }
 
