@@ -261,3 +261,39 @@ footer {
     }
   }
 }
+
+.timer {
+  display: flex;
+  gap: 6px;
+
+  &.on {
+    padding: 4px;
+    border-radius: 8px;
+    background: var(--tf-red-soft);
+  }
+}
+
+.t-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 0 10px 0 6px;
+  border: none;
+  border-radius: 8px;
+  background: var(--tf-primary-soft);
+  color: var(--tf-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  &.stop {
+    background: var(--tf-red);
+    color: #fff;
+  }
+}
