@@ -12,6 +12,9 @@ import { StorageService } from './storage.service';
 
 export const TIMESHEET_FILE = 'timesheet.json';
 
+/** Durée contractuelle, enregistrée comme liste d'un seul élément (format commun des fichiers du projet). */
+export const CONTRACT_FILE = 'contract.json';
+
 const CONTRACT_KEY = 'tf-contract';
 
 /** Horaires réellement faits, jour par jour (timesheet.json), et durée contractuelle (navigateur). */
@@ -20,6 +23,8 @@ export class TimesheetService {
   private readonly storage = inject(StorageService);
 
   private readonly store = new JsonFileStore<DayEntry>(this.storage, TIMESHEET_FILE);
+
+  private readonly contractStore = new JsonFileStore<Contract>(this.storage, CONTRACT_FILE);
 
   readonly entries = this.store.items;
 
@@ -39,7 +44,17 @@ export class TimesheetService {
   constructor() {
     effect(() => {
       if (this.storage.projectOpened() > 0) {
-        untracked(() => this.store.load());
+        untracked(async () => {
+          await Promise.all([this.store.load(), this.contractStore.load()]);
+          const saved = this.contractStore.items()[0];
+          if (this.validContract(saved)) {
+            this.contractState.set(saved);
+            this.cacheContract();
+          } else {
+            // Fichier absent : on y écrit le contrat déjà connu dans ce navigateur.
+            this.persistContract();
+          }
+        });
       }
     });
   }
@@ -83,7 +98,42 @@ export class TimesheetService {
     this.persistContract();
   }
 
+  /** Remplace les saisies en mémoire (récupération depuis GitHub). */
+  updateEntries(entries: DayEntry[]) {
+    this.store.set(entries);
+  }
+
+  /** Remplace la durée contractuelle (récupération depuis GitHub). */
+  updateContract(contract: Contract) {
+    if (this.validContract(contract)) {
+      this.contractState.set(contract);
+      this.contractStore.set([contract]);
+      this.cacheContract();
+    }
+  }
+
+  /** Durée contractuelle courante, sous forme de liste pour la synchronisation. */
+  contractItems(): Contract[] {
+    return [this.contractState()];
+  }
+
+  private validContract(contract: Contract | undefined): contract is Contract {
+    return (
+      !!contract &&
+      Array.isArray(contract.minutes) &&
+      contract.minutes.length === 7 &&
+      contract.minutes.every((m) => Number.isFinite(m)) &&
+      Array.isArray(contract.days) &&
+      contract.days.length === 7
+    );
+  }
+
   private persistContract() {
+    void this.contractStore.replace([this.contractState()]);
+    this.cacheContract();
+  }
+
+  private cacheContract() {
     try {
       localStorage.setItem(CONTRACT_KEY, JSON.stringify(this.contractState()));
     } catch {

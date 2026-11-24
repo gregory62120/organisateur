@@ -4,6 +4,8 @@ import { EVENTS_FILE, EventService } from './event.service';
 import { SUMMARIES_FILE, SummaryService } from './summary.service';
 import { MUSIC_PLAN_FILE, MusicPlanService } from './music-plan.service';
 import { MUSIC_FILE, MusicService } from './music.service';
+import { TIMELOG_FILE, TimeLogService } from './time-log.service';
+import { CONTRACT_FILE, TIMESHEET_FILE, TimesheetService } from './timesheet.service';
 import { TaskService } from './task.service';
 
 interface GithubConfig {
@@ -22,6 +24,8 @@ export class GithubSyncService {
   private readonly musicService = inject(MusicService);
   private readonly musicPlanService = inject(MusicPlanService);
   private readonly summaryService = inject(SummaryService);
+  private readonly timesheetService = inject(TimesheetService);
+  private readonly timeLogService = inject(TimeLogService);
 
   /**
    * Fichiers qui n'existent qu'une fois utilisés (évènements, musique, planification, résumés) : ils sont synchronisés
@@ -51,6 +55,21 @@ export class GithubSyncService {
       path: SUMMARIES_FILE,
       current: () => this.summaryService.summaries(),
       apply: (json) => this.summaryService.updateSummaries(JSON.parse(json)),
+    },
+    {
+      path: TIMESHEET_FILE,
+      current: () => this.timesheetService.entries(),
+      apply: (json) => this.timesheetService.updateEntries(JSON.parse(json)),
+    },
+    {
+      path: TIMELOG_FILE,
+      current: () => this.timeLogService.logs(),
+      apply: (json) => this.timeLogService.updateLogs(JSON.parse(json)),
+    },
+    {
+      path: CONTRACT_FILE,
+      current: () => this.timesheetService.contractItems(),
+      apply: (json) => this.timesheetService.updateContract(JSON.parse(json)[0]),
     },
   ];
 
