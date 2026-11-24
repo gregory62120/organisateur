@@ -1,4 +1,16 @@
-import { Component, computed, effect, forwardRef, inject, input, output } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  forwardRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Editor, Extensions } from '@tiptap/core';
 import {
@@ -13,6 +25,8 @@ import { Drawing } from '../tiptap/src/extensions/drawing.extension';
 import { TaskItem, TaskList } from '../tiptap/src/extensions/task.extension';
 import { EditorConfigurationService } from '../tiptap/src/services/editor-configuration.service';
 import { ToastService } from '../tiptap/src/services/toast.service';
+
+const TEXT_LOCK_KEY = 'tf-editor-text-lock';
 
 @Component({
   selector: 'app-editor',
@@ -93,7 +107,78 @@ export class EditorComponent {
     return config;
   });
 
+  private readonly view = viewChild<ElementRef<HTMLElement>>('viewRef');
+
+  /**
+   * Sur tablette, le texte hors des zones de dessin est verrouillé : le doigt ou le Pencil n'y
+   * posent plus de curseur, n'ouvrent pas le clavier et n'écrivent rien (Scribble compris).
+   * Actif par défaut sur un écran tactile, réglable avec le bouton cadenas.
+   */
+  readonly textLocked = signal(this.restoreLock());
+
+  readonly touchDevice =
+    typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+  toggleTextLock() {
+    this.textLocked.update((locked) => !locked);
+    try {
+      localStorage.setItem(TEXT_LOCK_KEY, String(this.textLocked()));
+    } catch {
+      // Stockage indisponible : le réglage ne sera pas conservé.
+    }
+  }
+
+  private restoreLock(): boolean {
+    try {
+      const saved = localStorage.getItem(TEXT_LOCK_KEY);
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    } catch {
+      // Pas de stockage : valeur par défaut.
+    }
+    return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  }
+
   constructor() {
+    afterNextRender(() => {
+      const root = this.view()?.nativeElement;
+      if (!root) {
+        return;
+      }
+      const outsideDrawing = (target: EventTarget | null) =>
+        target instanceof Element &&
+        target.closest('.ProseMirror') !== null &&
+        target.closest('.ate-drawing-node') === null;
+
+      // Doigt / Pencil hors dessin : pas de curseur ni de clavier (le défilement reste possible).
+      root.addEventListener(
+        'pointerdown',
+        (event) => {
+          if (this.textLocked() && event.pointerType !== 'mouse' && outsideDrawing(event.target)) {
+            event.preventDefault();
+            (document.activeElement as HTMLElement | null)?.blur?.();
+          }
+        },
+        true,
+      );
+
+      // Toute saisie (clavier, dictée, écriture manuscrite) dont le curseur est hors dessin.
+      root.addEventListener(
+        'beforeinput',
+        (event) => {
+          if (this.textLocked() && outsideDrawing(event.target)) {
+            const anchor = document.getSelection()?.anchorNode;
+            const element = anchor instanceof Element ? anchor : anchor?.parentElement;
+            if (!element?.closest('.ate-drawing-node')) {
+              event.preventDefault();
+            }
+          }
+        },
+        true,
+      );
+    });
+
     // Effet pour synchroniser la classe dark sur le body (pour les bubble menus)
     effect(() => {
       const isDark = this.editorState().darkMode;

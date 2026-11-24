@@ -24,11 +24,27 @@
         <!-- Front Face: Editor -->
         <div class="editor-pane">
           <div
+            #viewRef
             class="editor-view"
             [class.fill-container-active]="editorState().fillContainer"
             (mouseenter)="onEditorHover(true)"
             (mouseleave)="onEditorHover(false)"
           >
+            @if (touchDevice) {
+              <button
+                type="button"
+                class="text-lock"
+                [class.on]="textLocked()"
+                [title]="
+                  textLocked()
+                    ? 'Texte verrouillé (hors dessin) : déverrouiller'
+                    : 'Verrouiller le texte hors dessin'
+                "
+                (click)="toggleTextLock()"
+              >
+                {{ textLocked() ? '🔒 Texte verrouillé' : '🔓 Texte modifiable' }}
+              </button>
+            }
             <angular-tiptap-editor
               class="fill-container"
               [content]="content()"
