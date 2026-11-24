@@ -39,6 +39,11 @@ export class TimeLogService {
     });
   }
 
+  /** Remplace les enregistrements en mémoire (récupération depuis GitHub). */
+  updateLogs(logs: TimeLog[]) {
+    this.store.set(logs);
+  }
+
   add(taskId: string, date: string, minutes: number, note?: string) {
     const log: TimeLog = {
       id: crypto.randomUUID(),
