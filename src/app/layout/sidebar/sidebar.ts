@@ -122,8 +122,13 @@ export class Sidebar {
         this.offerToForget(token, error);
         throw error;
       }
+      alert('Récupération terminée.');
     } catch (error) {
       console.error('Erreur lors de la récupération GitHub', error);
+      // Sur tablette il n'y a pas de console : l'échec doit être visible.
+      alert(
+        `La récupération depuis GitHub a échoué : ${error instanceof Error ? error.message : error}`,
+      );
     }
   }
 
