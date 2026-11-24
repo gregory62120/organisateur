@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { TimeLogService } from '../../../../core/services/time-log.service';
 import { Task } from '../../../../core/models/task.model';
 import { TaskCardComponent } from './task-card';
 
@@ -215,6 +216,28 @@ describe('TaskCardComponent', () => {
       expect(el.querySelector<HTMLElement>('.archive')!.title).toBe('Restaurer');
       expect(el.querySelector('.sprint')).toBeNull();
       expect(el.querySelector('.status-chip')).not.toBeNull();
+    });
+  });
+
+  describe('chrono', () => {
+    const buttons = () => [...el.querySelectorAll<HTMLButtonElement>('.t-btn')];
+
+    it('propose Commencer puis Arrêter et Annuler une fois lancé', async () => {
+      await render();
+      const timeLog = TestBed.inject(TimeLogService);
+      expect(buttons().map((b) => b.textContent?.trim())).toEqual(['play_arrow Commencer']);
+
+      buttons()[0].click();
+      await fixture.whenStable();
+      expect(timeLog.timer()?.taskId).toBe('1');
+      expect(buttons().map((b) => b.textContent?.trim())).toEqual([
+        'pause Arrêter',
+        'close Annuler',
+      ]);
+
+      buttons()[1].click();
+      await fixture.whenStable();
+      expect(timeLog.timer()).toBeNull();
     });
   });
 });
